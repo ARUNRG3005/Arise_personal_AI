@@ -1,0 +1,460 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES — ARISE DESIGN SYSTEM
+   ============================================================ */
+@layer base {
+  :root {
+    /* Dark mode (default) */
+    --bg-base: #030712;
+    --bg-surface: #0a0f1e;
+    --bg-elevated: #111827;
+    --bg-overlay: #1a2332;
+
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
+    --text-muted: #374151;
+
+    --bg-card: rgba(255, 255, 255, 0.04);
+
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-bg-hover: rgba(255, 255, 255, 0.07);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    --sidebar-width: 260px;
+    --topbar-height: 64px;
+    --radius: 0.75rem;
+
+    color-scheme: dark;
+  }
+
+  .light {
+    --bg-base: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f1f5f9;
+    --bg-overlay: #e2e8f0;
+
+    --border-subtle: rgba(0, 0, 0, 0.04);
+    --border-default: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.14);
+
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --text-muted: #cbd5e1;
+
+    --bg-card: rgba(0, 0, 0, 0.02);
+
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-bg-hover: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(0, 0, 0, 0.06);
+
+    color-scheme: light;
+  }
+
+  * {
+    border-color: var(--border-default);
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.6);
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(99, 102, 241, 0.3);
+    color: white;
+  }
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+@layer components {
+  /* Glass card */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-primary {
+    background: linear-gradient(135deg, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient border */
+  .gradient-border {
+    position: relative;
+    background: var(--bg-surface);
+    border-radius: 0.75rem;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(99,102,241,0.5), rgba(168,85,247,0.5));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.25),
+                0 0 60px rgba(99, 102, 241, 0.1);
+  }
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.25),
+                0 0 60px rgba(6, 182, 212, 0.1);
+  }
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.25),
+                0 0 60px rgba(168, 85, 247, 0.1);
+  }
+
+  /* Shimmer loading skeleton */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 25%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+           transition-all duration-200 cursor-pointer
+           text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]
+           hover:bg-[color:var(--glass-bg-hover)];
+  }
+  .nav-item.active {
+    @apply text-white bg-primary-600/20 border border-primary-500/30;
+  }
+  .nav-item.active .nav-icon {
+    @apply text-primary-400;
+  }
+
+  /* Card */
+  .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    @apply rounded-2xl p-5 transition-all duration-200;
+  }
+  .card-hover {
+    @apply hover:bg-white/[0.06] hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-500 text-white font-medium px-4 py-2
+           rounded-xl transition-all duration-200 active:scale-95
+           shadow-glow-primary hover:shadow-glow-primary;
+  }
+  .btn-secondary {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    @apply text-[color:var(--text-primary)] font-medium px-4 py-2
+           rounded-xl transition-all duration-200 active:scale-95
+           hover:bg-white/10;
+  }
+  .btn-ghost {
+    @apply text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]
+           px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/5;
+  }
+  .btn-danger {
+    @apply bg-error-600 hover:bg-error-500 text-white font-medium px-4 py-2
+           rounded-xl transition-all duration-200 active:scale-95;
+  }
+
+  /* Input */
+  .input {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    @apply w-full px-4 py-3 rounded-xl text-[color:var(--text-primary)]
+           placeholder-[color:var(--text-tertiary)] outline-none
+           border border-[color:var(--border-default)]
+           focus:border-primary-500/60 focus:ring-2 focus:ring-primary-500/20
+           transition-all duration-200 text-sm;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+  .badge-primary { @apply bg-primary-500/15 text-primary-300 border border-primary-500/20; }
+  .badge-success { @apply bg-success-500/15 text-success-400 border border-success-500/20; }
+  .badge-warning { @apply bg-warning-500/15 text-warning-400 border border-warning-500/20; }
+  .badge-error   { @apply bg-error-500/15 text-error-400 border border-error-500/20; }
+  .badge-accent  { @apply bg-accent-500/15 text-accent-300 border border-accent-500/20; }
+  .badge-purple  { @apply bg-secondary-500/15 text-secondary-300 border border-secondary-500/20; }
+
+  /* Dot indicator */
+  .dot-online  { @apply w-2 h-2 rounded-full bg-success-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]; }
+  .dot-busy    { @apply w-2 h-2 rounded-full bg-warning-500; }
+  .dot-offline { @apply w-2 h-2 rounded-full bg-[color:var(--text-muted)]; }
+
+  /* Progress ring */
+  .progress-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  /* AI typing indicator */
+  .typing-dot {
+    @apply w-2 h-2 rounded-full bg-primary-400 animate-bounce;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  /* Mesh background */
+  .bg-mesh {
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+  }
+
+  /* Section header */
+  .section-header {
+    @apply flex items-center justify-between mb-5;
+  }
+  .section-title {
+    @apply text-lg font-semibold text-[color:var(--text-primary)];
+  }
+  .section-subtitle {
+    @apply text-sm text-[color:var(--text-secondary)];
+  }
+
+  /* Code block */
+  .code-block {
+    @apply bg-navy-900 border border-[color:var(--border-subtle)] rounded-xl
+           p-4 font-mono text-sm overflow-x-auto;
+  }
+
+  /* Divider */
+  .divider {
+    @apply w-full h-px bg-[color:var(--border-subtle)] my-4;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    @apply absolute z-50 px-2 py-1 text-xs font-medium text-white
+           bg-navy-700 rounded-lg shadow-lg whitespace-nowrap
+           pointer-events-none;
+  }
+}
+
+/* ============================================================
+   CUSTOM ANIMATIONS & EFFECTS
+   ============================================================ */
+@layer utilities {
+  .animate-in {
+    animation: fadeIn 0.2s ease-out, scaleIn 0.2s ease-out;
+  }
+
+  .text-balance { text-wrap: balance; }
+
+  /* Gradient animation */
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradientShift 6s ease infinite;
+  }
+
+  /* Hide scrollbar but keep scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Thin scrollbar */
+  .scrollbar-thin::-webkit-scrollbar { width: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 9999px;
+  }
+
+  /* Noise texture */
+  .noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Focus visible only */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent;
+  }
+}
+
+/* ============================================================
+   PAGE TRANSITIONS
+   ============================================================ */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+/* ============================================================
+   MARKDOWN PROSE OVERRIDES (AI Chat)
+   ============================================================ */
+.prose-arise {
+  @apply prose prose-invert max-w-none;
+}
+.prose-arise code {
+  @apply bg-navy-800 border border-[color:var(--border-subtle)] rounded-md
+         px-1.5 py-0.5 text-accent-300 text-sm font-mono;
+  background-color: rgba(255,255,255,0.05) !important;
+}
+.prose-arise pre {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius) !important;
+}
+.prose-arise pre code {
+  background-color: transparent !important;
+  border-style: none !important;
+  font-size: 0.875rem !important;
+}
+.prose-arise a { @apply text-primary-400 hover:text-primary-300; }
+.prose-arise h1, .prose-arise h2, .prose-arise h3 {
+  @apply text-[color:var(--text-primary)] font-semibold;
+}
+.prose-arise p { @apply text-[color:var(--text-secondary)] leading-relaxed; }
+.prose-arise ul, .prose-arise ol { @apply text-[color:var(--text-secondary)]; }
+.prose-arise blockquote {
+  @apply border-l-primary-500 text-[color:var(--text-secondary)] not-italic;
+}
+
+/* ============================================================
+   HABIT HEATMAP
+   ============================================================ */
+.heatmap-cell {
+  @apply rounded-sm transition-all duration-150 cursor-pointer;
+}
+.heatmap-cell-0 { background: rgba(255,255,255,0.04); }
+.heatmap-cell-1 { background: rgba(99,102,241,0.3); }
+.heatmap-cell-2 { background: rgba(99,102,241,0.5); }
+.heatmap-cell-3 { background: rgba(99,102,241,0.7); }
+.heatmap-cell-4 { background: rgba(99,102,241,0.9); }
+
+/* ============================================================
+   PRIORITY COLORS
+   ============================================================ */
+.priority-low    { @apply text-success-400 bg-success-500/10; }
+.priority-medium { @apply text-warning-400 bg-warning-500/10; }
+.priority-high   { @apply text-orange-400 bg-orange-500/10; }
+.priority-urgent { @apply text-error-400 bg-error-500/10; }
+
+/* ============================================================
+   CHART OVERRIDES (Recharts)
+   ============================================================ */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.75rem 1rem !important;
+}
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-subtle) !important;
+}
+
+/* ============================================================
+   COMMAND PALETTE OVERLAY
+   ============================================================ */
+.cmd-overlay {
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.cmd-palette {
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}

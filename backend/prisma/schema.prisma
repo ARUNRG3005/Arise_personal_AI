@@ -1,0 +1,453 @@
+// ARISE — Prisma Schema
+// PostgreSQL + pgvector (Supabase)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ============================================================
+// USER
+// ============================================================
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  avatarUrl   String?
+  bio         String?
+  preferences Json     @default("{}")
+  timezone    String   @default("Asia/Kolkata")
+  currency    String   @default("INR")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tasks         Task[]
+  events        CalendarEvent[]
+  habits        Habit[]
+  journal       JournalEntry[]
+  notes         Note[]
+  projects      Project[]
+  expenses      Expense[]
+  documents     Document[]
+  conversations Conversation[]
+  memories      Memory[]
+  notifications Notification[]
+  studySessions StudySession[]
+
+  @@map("users")
+}
+
+// ============================================================
+// AI MEMORY SYSTEM
+// ============================================================
+enum MemoryLayer {
+  SHORT_TERM
+  LONG_TERM
+  PREFERENCE
+  ROUTINE
+  GOAL
+  KNOWLEDGE
+  CONVERSATION
+  SEMANTIC
+}
+
+model Memory {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  layer      MemoryLayer
+  key        String?
+  content    String
+  source     String? // "chat" | "journal" | "task" | "document" | "manual"
+  metadata   Json        @default("{}")
+  importance Float       @default(0.5)
+  embedding  Unsupported("vector(1536)")?
+  expiresAt  DateTime?
+  accessCount Int        @default(0)
+  lastAccessed DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([userId, layer])
+  @@index([userId, key])
+  @@map("memories")
+}
+
+// ============================================================
+// AI CONVERSATIONS
+// ============================================================
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  summary   String?
+  isPinned  Boolean   @default(false)
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // "user" | "assistant" | "tool"
+  content        String
+  toolCalls      Json? // tools the AI decided to use
+  toolResults    Json? // results from tool execution
+  metadata       Json         @default("{}")
+  embedding      Unsupported("vector(1536)")?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  priority     Priority   @default(MEDIUM)
+  status       TaskStatus @default(TODO)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  labels       String[]   @default([])
+  parentId     String? // for subtasks
+  parent       Task?      @relation("TaskSubtasks", fields: [parentId], references: [id])
+  subtasks     Task[]     @relation("TaskSubtasks")
+  isRecurring  Boolean    @default(false)
+  recurRule    String? // cron expression
+  timeEstimate Int? // minutes
+  timeSpent    Int        @default(0) // minutes
+  sortOrder    Int        @default(0)
+  embedding    Unsupported("vector(1536)")?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime? // soft delete
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@map("tasks")
+}
+
+// ============================================================
+// CALENDAR
+// ============================================================
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  start       DateTime
+  end         DateTime
+  isAllDay    Boolean  @default(false)
+  color       String   @default("#6366f1")
+  location    String?
+  isRecurring Boolean  @default(false)
+  recurRule   String?
+  reminders   Json     @default("[]") // [{minutes: 30, type: "notification"}]
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([userId, start])
+  @@map("calendar_events")
+}
+
+// ============================================================
+// HABITS
+// ============================================================
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model Habit {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  frequency   Frequency @default(DAILY)
+  targetCount Int       @default(1)
+  color       String    @default("#6366f1")
+  icon        String    @default("⭐")
+  streakCount Int       @default(0)
+  bestStreak  Int       @default(0)
+  sortOrder   Int       @default(0)
+  isArchived  Boolean   @default(false)
+  completions HabitCompletion[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("habits")
+}
+
+model HabitCompletion {
+  id          String   @id @default(cuid())
+  habitId     String
+  habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  userId      String
+  completedAt DateTime @default(now())
+  count       Int      @default(1)
+  note        String?
+
+  @@index([habitId, completedAt])
+  @@map("habit_completions")
+}
+
+// ============================================================
+// JOURNAL
+// ============================================================
+enum MoodLevel {
+  TERRIBLE
+  BAD
+  OKAY
+  GOOD
+  GREAT
+}
+
+model JournalEntry {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content      String
+  mood         Int? // 1-10
+  moodLabel    MoodLevel?
+  energy       Int? // 1-10
+  aiReflection String?
+  aiSummary    String?
+  photos       String[]  @default([])
+  tags         String[]  @default([])
+  embedding    Unsupported("vector(1536)")?
+  date         DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, date])
+  @@map("journal_entries")
+}
+
+// ============================================================
+// NOTES
+// ============================================================
+model NoteFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#6366f1")
+  icon      String   @default("📁")
+  parentId  String?
+  parent    NoteFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children  NoteFolder[] @relation("FolderHierarchy")
+  notes     Note[]
+  createdAt DateTime @default(now())
+
+  @@map("note_folders")
+}
+
+model Note {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId  String?
+  folder    NoteFolder? @relation(fields: [folderId], references: [id])
+  title     String
+  content   String      @default("")
+  tags      String[]    @default([])
+  isPinned  Boolean     @default(false)
+  isFavorite Boolean    @default(false)
+  embedding Unsupported("vector(1536)")?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@map("notes")
+}
+
+// ============================================================
+// PROJECTS
+// ============================================================
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  githubUrl   String?
+  deployUrl   String?
+  color       String        @default("#6366f1")
+  progress    Int           @default(0) // 0-100
+  milestones  Json          @default("[]")
+  issues      Json          @default("[]")
+  screenshots String[]      @default([])
+  deadline    DateTime?
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("projects")
+}
+
+// ============================================================
+// EXPENSES
+// ============================================================
+enum ExpenseType {
+  INCOME
+  EXPENSE
+}
+
+model Expense {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        ExpenseType @default(EXPENSE)
+  amount      Float
+  currency    String      @default("INR")
+  category    String
+  description String?
+  tags        String[]    @default([])
+  date        DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, date])
+  @@map("expenses")
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  userId    String
+  category  String
+  limit     Float
+  period    String   @default("monthly") // "weekly" | "monthly"
+  currency  String   @default("INR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("budgets")
+}
+
+// ============================================================
+// DOCUMENTS
+// ============================================================
+model Document {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  fileUrl       String
+  fileType      String // "pdf" | "image" | "text"
+  fileSize      Int? // bytes
+  summary       String?
+  extractedText String?
+  tags          String[] @default([])
+  embedding     Unsupported("vector(1536)")?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("documents")
+}
+
+// ============================================================
+// STUDY
+// ============================================================
+model StudySession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject    String
+  duration   Int // minutes
+  type       String   @default("focus") // "focus" | "review" | "practice"
+  notes      String?
+  startedAt  DateTime
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@map("study_sessions")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String   @default("reminder") // "reminder" | "ai" | "system" | "habit"
+  isRead    Boolean  @default(false)
+  metadata  Json     @default("{}")
+  scheduledFor DateTime?
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ============================================================
+// DOMAIN EVENTS (Event Bus persistence)
+// ============================================================
+model DomainEvent {
+  id         String   @id @default(cuid())
+  type       String   // "TASK_CREATED" | "HABIT_COMPLETED" | etc.
+  userId     String?
+  payload    Json
+  processed  Boolean  @default(false)
+  error      String?
+  createdAt  DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([processed, createdAt])
+  @@map("domain_events")
+}
