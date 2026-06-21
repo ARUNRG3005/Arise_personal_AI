@@ -1,20 +1,17 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
-import { Sparkles, Zap, Target, Brain, TrendingUp, Plus, ArrowRight, CheckCircle2, Circle, Flame, Calendar, Clock } from 'lucide-react'
+import { Sparkles, Zap, Target, Brain, TrendingUp, Plus, ArrowRight, CheckCircle2, Circle, Flame, Calendar, Clock, Trash2, Database, Activity, GitFork } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getGreeting, getDayPhase } from '@/lib/utils'
 import QuickCapture from './components/QuickCapture'
 import DailyTimeline from './components/DailyTimeline'
 import { cn } from '@/lib/utils'
+import { useUserStore } from '@/stores/userStore'
+import { useTaskStore } from '@/stores/taskStore'
+import { githubService } from '@/services/github/githubService'
 
 // Mock data for Phase 1 (will be replaced by real API data)
-const MOCK_TASKS = [
-  { id: '1', title: 'Review AI Orchestrator design', priority: 'HIGH', status: 'TODO', dueDate: new Date().toISOString() },
-  { id: '2', title: 'Write Prisma schema migrations', priority: 'MEDIUM', status: 'IN_PROGRESS', dueDate: new Date().toISOString() },
-  { id: '3', title: 'Set up Supabase storage bucket', priority: 'LOW', status: 'TODO', dueDate: new Date().toISOString() },
-  { id: '4', title: 'Deploy frontend to Vercel', priority: 'HIGH', status: 'TODO', dueDate: new Date().toISOString() },
-]
-
 const MOCK_HABITS = [
   { id: '1', title: 'Morning Exercise', icon: '🏋️', completed: true, streak: 12 },
   { id: '2', title: 'Read 30 minutes', icon: '📚', completed: false, streak: 5 },
@@ -45,18 +42,84 @@ const stagger = {
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
 }
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const { profile } = useUserStore()
+  const { tasks, toggleTask, deleteTask } = useTaskStore()
+  const name = profile.name || 'User'
   const phase = getDayPhase()
   const greeting = getGreeting()
   const today = format(new Date(), "EEEE, MMMM d")
 
-  const completedTasks = MOCK_TASKS.filter(t => t.status === 'DONE').length
+  // Live GitHub state
+  const githubUsername = profile.githubUsername || 'ARUNRG3005'
+  const [gitProfile, setGitProfile] = useState<any>(null)
+  const [gitRepos, setGitRepos] = useState<any[]>([])
+  const [gitLoading, setGitLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadGit() {
+      try {
+        const { profile: p, repos: r } = await githubService.fetchProfileAndRepos(githubUsername)
+        setGitProfile(p)
+        setGitRepos(r)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setGitLoading(false)
+      }
+    }
+    loadGit()
+  }, [githubUsername])
+
+  // Dynamic calculations for GitHub details
+  const sortedRepos = [...gitRepos].sort((a, b) => new Date(b.pushed_at || b.updated_at).getTime() - new Date(a.pushed_at || a.updated_at).getTime())
+  const latestRepo = sortedRepos[0]
+
+  let daysSinceCommit = 0
+  if (latestRepo) {
+    const lastPushed = new Date(latestRepo.pushed_at || latestRepo.updated_at)
+    daysSinceCommit = Math.floor(Math.abs(Date.now() - lastPushed.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  // Dynamic AI Suggestions
+  const aiSuggestions: string[] = []
+  if (latestRepo) {
+    if (daysSinceCommit > 3) {
+      aiSuggestions.push(`You haven't committed to your ${latestRepo.name} repository for ${daysSinceCommit} days. Consider starting a focus block today.`)
+    } else {
+      aiSuggestions.push(`Your development momentum is strong! You recently pushed updates to ${latestRepo.name}.`)
+    }
+  }
+
+  const inactiveRepos = gitRepos.filter(r => r.activityStatus === 'Inactive').slice(0, 1)
+  if (inactiveRepos.length > 0) {
+    aiSuggestions.push(`Your ${inactiveRepos[0].name} project has become inactive. Want to archive it or schedule a task to review it?`)
+  }
+
+  const recentCommitsCount = gitRepos.filter(r => {
+    const pushedDate = new Date(r.pushed_at || r.updated_at)
+    const diffDays = Math.ceil(Math.abs(Date.now() - pushedDate.getTime()) / (1000 * 60 * 60 * 24))
+    return diffDays <= 7
+  }).length
+
+  if (recentCommitsCount > 0) {
+    aiSuggestions.push(`You updated ${recentCommitsCount} repositories this week. Great work keeping up the progress!`)
+  }
+
+  if (aiSuggestions.length === 0) {
+    aiSuggestions.push("You have 4 tasks due today. Want me to prioritize them?")
+    aiSuggestions.push("Your best focus time is usually 9–11 AM. Block it today?")
+    aiSuggestions.push("You haven't journaled in 2 days. Want to reflect now?")
+  }
+
+  const completedTasks = tasks.filter(t => t.status === 'DONE').length
   const completedHabits = MOCK_HABITS.filter(h => h.completed).length
-  const productivity = Math.round(((completedTasks + completedHabits) / (MOCK_TASKS.length + MOCK_HABITS.length)) * 100)
+  const totalItems = tasks.length + MOCK_HABITS.length
+  const productivity = totalItems > 0 ? Math.round(((completedTasks + completedHabits) / totalItems) * 100) : 0
 
   return (
     <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
@@ -73,7 +136,7 @@ export default function DashboardPage() {
               {phase === 'morning' ? '☀️' : phase === 'afternoon' ? '🌤️' : phase === 'evening' ? '🌆' : '🌙'}
             </span>
             <h2 className="text-2xl font-bold text-[color:var(--text-primary)]">
-              {greeting}, <span className="gradient-text">User</span>
+              {greeting}, <span className="gradient-text">{name}</span>
             </h2>
           </div>
           <p className="text-sm text-[color:var(--text-secondary)]">{today} · Let's make today count.</p>
@@ -145,7 +208,7 @@ export default function DashboardPage() {
                     <span className="dot-online" />
                   </div>
                   <p className="text-sm text-[color:var(--text-primary)] leading-relaxed">
-                    {AI_SUGGESTIONS[0]}
+                    {aiSuggestions[0]}
                   </p>
                 </div>
                 <button
@@ -161,7 +224,7 @@ export default function DashboardPage() {
           {/* Stats row */}
           <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Tasks Done', value: `${completedTasks}/${MOCK_TASKS.length}`, icon: Target, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+              { label: 'Tasks Done', value: `${completedTasks}/${tasks.length}`, icon: Target, color: 'text-primary-400', bg: 'bg-primary-500/10' },
               { label: 'Habits', value: `${completedHabits}/${MOCK_HABITS.length}`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
               { label: 'Events', value: `${MOCK_EVENTS.length}`, icon: Calendar, color: 'text-accent-400', bg: 'bg-accent-500/10' },
             ].map((stat) => {
@@ -183,7 +246,7 @@ export default function DashboardPage() {
             <div className="section-header">
               <div>
                 <h3 className="section-title">Today's Tasks</h3>
-                <p className="section-subtitle">{MOCK_TASKS.filter(t => t.status !== 'DONE').length} remaining</p>
+                <p className="section-subtitle">{tasks.filter(t => t.status !== 'DONE').length} remaining</p>
               </div>
               <button
                 onClick={() => navigate('/tasks')}
@@ -194,10 +257,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-2">
-              {MOCK_TASKS.map((task) => (
+              {tasks.slice(0, 5).map((task) => (
                 <div
                   key={task.id}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                  onClick={() => toggleTask(task.id)}
                 >
                   <button className="flex-shrink-0 text-[color:var(--text-tertiary)] hover:text-success-400 transition-colors">
                     {task.status === 'DONE'
@@ -220,8 +284,18 @@ export default function DashboardPage() {
                   )}>
                     {task.priority}
                   </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}
+                    className="p-1.5 rounded-lg hover:bg-rose-500/20 text-[color:var(--text-tertiary)] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                    title="Delete Task"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
+              {tasks.length === 0 && (
+                <p className="text-xs text-[color:var(--text-muted)] text-center py-4">No tasks for today. Add one below!</p>
+              )}
             </div>
 
             <button
@@ -272,6 +346,67 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
+          </motion.div>
+
+          {/* GitHub Live Monitor */}
+          <motion.div variants={fadeUp} className="card">
+            <div className="section-header">
+              <div>
+                <h3 className="section-title">GitHub Monitor</h3>
+                <p className="section-subtitle">Live development activity for @{githubUsername}</p>
+              </div>
+              <button onClick={() => navigate('/projects')} className="btn-ghost text-xs flex items-center gap-1">
+                All Repos <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {gitLoading ? (
+              <div className="animate-pulse space-y-3 py-2">
+                <div className="h-4 bg-white/5 rounded w-1/3" />
+                <div className="h-10 bg-white/5 rounded w-full" />
+                <div className="h-10 bg-white/5 rounded w-full" />
+              </div>
+            ) : gitRepos.length === 0 ? (
+              <p className="text-xs text-[color:var(--text-muted)] text-center py-4">No GitHub repositories found.</p>
+            ) : (
+              <div className="space-y-3">
+                {/* Most Active Repository Card */}
+                {latestRepo && (
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-semibold text-primary-400">Latest Push</p>
+                      <h4 className="text-xs font-bold text-white truncate mt-0.5">{latestRepo.name}</h4>
+                      <p className="text-xs text-[color:var(--text-secondary)] truncate mt-1">
+                        {latestRepo.latestCommit?.commit.message || latestRepo.description || 'No commit message'}
+                      </p>
+                      <p className="text-[9px] text-[color:var(--text-tertiary)] mt-1.5 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-indigo-400" />
+                        {daysSinceCommit === 0 ? 'Today' : daysSinceCommit === 1 ? 'Yesterday' : `${daysSinceCommit} days ago`}
+                      </p>
+                    </div>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+                      {latestRepo.activityStatus}
+                    </span>
+                  </div>
+                )}
+
+                {/* Attention Needed Repos */}
+                {gitRepos.filter(r => r.open_issues_count > 0).slice(0, 1).map(repo => (
+                  <div key={repo.id} className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/10 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-semibold text-rose-400">Needs Attention</p>
+                      <h4 className="text-xs font-bold text-white truncate mt-0.5">{repo.name}</h4>
+                      <p className="text-[10px] text-rose-300 mt-1">
+                        {repo.open_issues_count} open issues require resolution.
+                      </p>
+                    </div>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 font-mono">
+                      Issues
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       </motion.div>

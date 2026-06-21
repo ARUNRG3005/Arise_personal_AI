@@ -59,4 +59,31 @@ router.post('/quick-capture', authMiddleware, async (req: AuthenticatedRequest, 
   }
 });
 
+import { ProviderFactory } from '../../ai/providers/ProviderFactory';
+
+router.post('/summarize-repo', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const { name, description, languages = [], topics = [] } = req.body;
+
+  try {
+    const provider = ProviderFactory.getProvider();
+    const prompt = `You are the ARISE AI Operating System. Generate a concise development summary (2-3 sentences max) for the following GitHub repository:
+- Name: ${name}
+- Description: ${description || 'No description provided.'}
+- Languages: ${languages.join(', ')}
+- Topics: ${topics.join(', ')}
+
+Format example: "This is a React + Node.js AI project currently under active development. The repository has been updated recently and focuses on productivity automation."`;
+
+    const response = await provider.chat([
+      { role: 'user', content: prompt }
+    ], undefined, { temperature: 0.3 });
+
+    const summary = response.choices?.[0]?.message?.content?.trim() || '';
+    res.json({ success: true, summary });
+  } catch (error) {
+    logger.error('Error generating AI repo summary:', error);
+    res.status(500).json({ error: 'Failed to generate repository summary.' });
+  }
+});
+
 export default router;

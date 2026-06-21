@@ -3,6 +3,7 @@ import { ChatMessage, ToolDefinition } from '../providers/AIProvider';
 import { TaskAgent } from '../agents/TaskAgent';
 import { CalendarAgent } from '../agents/CalendarAgent';
 import { MemoryAgent } from '../agents/MemoryAgent';
+import { GitHubAgent } from '../agents/GitHubAgent';
 import { BaseAgent } from '../agents/BaseAgent';
 import { logger } from '../../config/logger';
 import { prisma } from '../../config/database';
@@ -20,6 +21,7 @@ export class AIOrchestrator {
     this.registerAgent(new TaskAgent());
     this.registerAgent(new CalendarAgent());
     this.registerAgent(new MemoryAgent());
+    this.registerAgent(new GitHubAgent());
   }
 
   registerAgent(agent: BaseAgent) {

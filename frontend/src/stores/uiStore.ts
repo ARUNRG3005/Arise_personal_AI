@@ -40,6 +40,14 @@ interface UIStore {
   // Loading states
   isPageLoading: boolean
   setIsPageLoading: (loading: boolean) => void
+
+  // New: Onboarding flag
+  onboardingComplete: boolean
+  setOnboardingComplete: (v: boolean) => void
+
+  // New: Focus mode flag
+  focusModeActive: boolean
+  setFocusModeActive: (v: boolean) => void
 }
 
 export const useUIStore = create<UIStore>()(
@@ -56,7 +64,13 @@ export const useUIStore = create<UIStore>()(
         set({ theme: next })
         applyTheme(next)
       },
+      // New: Onboarding flag
+      onboardingComplete: false,
+      setOnboardingComplete: (v) => set({ onboardingComplete: v }),
 
+      // New: Focus mode flag
+      focusModeActive: false,
+      setFocusModeActive: (v) => set({ focusModeActive: v }),
       // Sidebar
       sidebarOpen: true,
       sidebarCollapsed: false,
@@ -91,7 +105,11 @@ export const useUIStore = create<UIStore>()(
     }),
     {
       name: 'arise-ui',
-      partialize: (state) => ({ theme: state.theme, sidebarCollapsed: state.sidebarCollapsed }),
+      partialize: (state) => ({ 
+        theme: state.theme, 
+        sidebarCollapsed: state.sidebarCollapsed,
+        onboardingComplete: state.onboardingComplete 
+      }),
     }
   )
 )

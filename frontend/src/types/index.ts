@@ -429,4 +429,56 @@ export interface StudyAnalytics {
   totalMinutes: number
   sessions: number
   bySubject: { subject: string; minutes: number }[]
+} 
+
+// ============================================================
+// V2 ADDITIONS
+// ============================================================
+
+export interface Goal {
+  id: string
+  title: string
+  emoji: string
+  description?: string
+  lifeArea: string // reference LifeArea id
+  createdAt: string
 }
+
+export interface RoutineItem {
+  id: string
+  label: string
+  emoji: string
+  time: string // e.g., "08:00"
+}
+
+export interface MoodEntry {
+  date: string
+  level: number // 1-5
+  label: string
+  note?: string
+}
+
+export interface LifeArea {
+  id: string
+  emoji: string
+  label: string
+}
+
+export interface AIMemory {
+  id: string
+  content: string
+  pinned: boolean
+  protected: boolean
+  createdAt: string
+}
+
+export interface LifeScore {
+  overall: number
+  study: number
+  health: number
+  finance: number
+  projects: number
+  growth: number
+  consistency: number
+}
+

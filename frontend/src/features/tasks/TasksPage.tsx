@@ -3,39 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, LayoutGrid, List, Filter, Search, CheckCircle2,
   Circle, Clock, Flame, Flag, Calendar, MoreHorizontal,
-  Loader2, ChevronDown, Tag,
+  Loader2, ChevronDown, Tag, Trash2
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn, PRIORITY_CONFIG } from '@/lib/utils'
 import type { Priority } from '@/types'
+import { useTaskStore, type Task } from '@/stores/taskStore'
 
 type Status = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED'
-
-interface Task {
-  id: string
-  title: string
-  description?: string
-  status: Status
-  priority: Priority
-  dueDate?: string
-  tags?: string[]
-  subtasks?: { id: string; title: string; done: boolean }[]
-}
-
-const MOCK_TASKS: Task[] = [
-  {
-    id: '1', title: 'Review AI Orchestrator design', status: 'IN_PROGRESS', priority: 'HIGH',
-    dueDate: new Date().toISOString(), tags: ['dev', 'ai'],
-    subtasks: [{ id: 's1', title: 'Read architecture docs', done: true }, { id: 's2', title: 'Write feedback', done: false }],
-  },
-  { id: '2', title: 'Write Prisma schema migrations', status: 'TODO', priority: 'MEDIUM', dueDate: new Date().toISOString(), tags: ['dev'] },
-  { id: '3', title: 'Set up Supabase storage bucket', status: 'TODO', priority: 'LOW', tags: ['infra'] },
-  { id: '4', title: 'Deploy frontend to Vercel', status: 'TODO', priority: 'HIGH', dueDate: new Date(Date.now() + 86400000).toISOString() },
-  { id: '5', title: 'Implement streaming chat', status: 'DONE', priority: 'URGENT', tags: ['dev', 'ai'] },
-  { id: '6', title: 'Design dashboard widgets', status: 'IN_PROGRESS', priority: 'MEDIUM' },
-  { id: '7', title: 'Add habit tracking UI', status: 'TODO', priority: 'MEDIUM', tags: ['frontend'] },
-  { id: '8', title: 'Write unit tests', status: 'TODO', priority: 'LOW', tags: ['dev'] },
-]
 
 const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: string; icon: typeof Circle }> = {
   TODO: { label: 'To Do', color: 'text-[color:var(--text-tertiary)]', bg: 'bg-white/5', icon: Circle },
@@ -46,10 +21,11 @@ const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: string; 
 
 const STATUSES: Status[] = ['TODO', 'IN_PROGRESS', 'DONE']
 
-function TaskCard({ task, onToggle }: { task: Task; onToggle: (id: string) => void }) {
+function TaskCard({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false)
   const pc = PRIORITY_CONFIG[task.priority]
-  const sc = STATUS_CONFIG[task.status]
+  const statusKey = (task.status === 'CANCELLED' ? 'CANCELLED' : task.status) as Status;
+  const sc = STATUS_CONFIG[statusKey]
 
   return (
     <motion.div
@@ -134,10 +110,11 @@ function TaskCard({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
         </div>
 
         <button
-          onClick={e => e.stopPropagation()}
-          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-white/10 text-[color:var(--text-tertiary)] transition-all"
+          onClick={e => { e.stopPropagation(); onDelete(task.id) }}
+          className="p-1.5 rounded-lg hover:bg-rose-500/20 text-[color:var(--text-tertiary)] hover:text-rose-400 transition-all flex-shrink-0"
+          title="Delete Task"
         >
-          <MoreHorizontal className="w-3.5 h-3.5" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </motion.div>
@@ -145,30 +122,16 @@ function TaskCard({ task, onToggle }: { task: Task; onToggle: (id: string) => vo
 }
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS)
+  const { tasks, addTask: storeAddTask, toggleTask, deleteTask } = useTaskStore()
   const [view, setView] = useState<'list' | 'kanban'>('list')
   const [search, setSearch] = useState('')
   const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL')
   const [newTaskText, setNewTaskText] = useState('')
   const [showAddTask, setShowAddTask] = useState(false)
 
-  const toggleTask = (id: string) => {
-    setTasks(prev => prev.map(t =>
-      t.id === id
-        ? { ...t, status: t.status === 'DONE' ? 'TODO' : 'DONE' }
-        : t
-    ))
-  }
-
-  const addTask = () => {
+  const handleAddTask = () => {
     if (!newTaskText.trim()) return
-    const task: Task = {
-      id: Date.now().toString(),
-      title: newTaskText.trim(),
-      status: 'TODO',
-      priority: 'MEDIUM',
-    }
-    setTasks(prev => [task, ...prev])
+    storeAddTask(newTaskText.trim())
     setNewTaskText('')
     setShowAddTask(false)
   }
@@ -179,10 +142,11 @@ export default function TasksPage() {
     return matchSearch && matchPriority
   })
 
-  const counts = {
+  const counts: Record<Status, number> = {
     TODO: filtered.filter(t => t.status === 'TODO').length,
     IN_PROGRESS: filtered.filter(t => t.status === 'IN_PROGRESS').length,
     DONE: filtered.filter(t => t.status === 'DONE').length,
+    CANCELLED: filtered.filter(t => t.status === 'CANCELLED').length,
   }
 
   return (
@@ -279,13 +243,13 @@ export default function TasksPage() {
                 value={newTaskText}
                 onChange={e => setNewTaskText(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') addTask()
+                  if (e.key === 'Enter') handleAddTask()
                   if (e.key === 'Escape') setShowAddTask(false)
                 }}
                 placeholder="Type task name and press Enter..."
                 className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none"
               />
-              <button onClick={addTask} className="btn-primary text-xs px-3 py-1.5">Add</button>
+              <button onClick={handleAddTask} className="btn-primary text-xs px-3 py-1.5">Add</button>
               <button onClick={() => setShowAddTask(false)} className="btn-ghost text-xs px-2 py-1.5">Cancel</button>
             </div>
           </motion.div>
@@ -309,7 +273,7 @@ export default function TasksPage() {
                 <div className="space-y-2">
                   <AnimatePresence>
                     {filtered.filter(t => t.status === status).map(task => (
-                      <TaskCard key={task.id} task={task} onToggle={toggleTask} />
+                      <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
                     ))}
                   </AnimatePresence>
                 </div>
@@ -344,7 +308,7 @@ export default function TasksPage() {
                 <div className="space-y-2">
                   <AnimatePresence>
                     {columnTasks.map(task => (
-                      <TaskCard key={task.id} task={task} onToggle={toggleTask} />
+                      <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
                     ))}
                   </AnimatePresence>
                 </div>

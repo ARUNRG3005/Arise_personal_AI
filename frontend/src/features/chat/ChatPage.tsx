@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import ChatSidebar from './components/ChatSidebar'
 import ChatMessages from './components/ChatMessages'
 import ChatInput from './components/ChatInput'
+import { useVoiceAssistant, type VoiceState } from '@/services/voice/useVoiceAssistant'
 import { SUGGESTED_PROMPTS } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
 
@@ -85,6 +86,11 @@ export default function ChatPage() {
   const [activeConvId, setActiveConvId] = useState('conv-1')
   const [isTyping, setIsTyping] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const [inputValue, setInputValue] = useState('')
+  const voiceStateRef = useRef<VoiceState>('idle')
+  const speakResponseRef = useRef<(text: string) => void>(() => {})
+  const interruptRef = useRef<() => void>(() => {})
 
   const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0]
 
@@ -223,8 +229,16 @@ export default function ChatPage() {
         return c
       }));
 
+      // Speak response if voice assistant was processing this message
+      if (voiceStateRef.current === 'processing') {
+        speakResponseRef.current(accumulatedContent)
+      }
+
     } catch (err: any) {
       console.error(err);
+      if (voiceStateRef.current === 'processing') {
+        interruptRef.current()
+      }
       setConversations(prev => prev.map(c => {
         if (c.id === activeConvId) {
           return {
@@ -244,6 +258,32 @@ export default function ChatPage() {
       setIsTyping(false);
     }
   }, [activeConvId, isTyping])
+
+  const { state: voiceState, startListening, stopListening, interrupt, speakResponse } = useVoiceAssistant({
+    onSend: (text) => {
+      handleSend(text)
+      setInputValue('')
+    },
+    onTranscriptChange: (text) => {
+      setInputValue(text)
+    }
+  })
+
+  useEffect(() => {
+    voiceStateRef.current = voiceState
+    speakResponseRef.current = speakResponse
+    interruptRef.current = interrupt
+  }, [voiceState, speakResponse, interrupt])
+
+  const toggleVoice = useCallback(() => {
+    if (voiceState === 'idle') {
+      startListening()
+    } else if (voiceState === 'listening') {
+      stopListening()
+    } else if (voiceState === 'speaking') {
+      interrupt()
+    }
+  }, [voiceState, startListening, stopListening, interrupt])
 
   const handleNewChat = () => {
     const newConv: Conversation = {
@@ -330,6 +370,11 @@ export default function ChatPage() {
           onSend={handleSend}
           isDisabled={isTyping}
           inputRef={inputRef}
+          value={inputValue}
+          onChange={setInputValue}
+          voiceState={voiceState}
+          onVoiceToggle={toggleVoice}
+          onVoiceInterrupt={interrupt}
         />
       </div>
     </div>

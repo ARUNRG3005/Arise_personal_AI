@@ -7,6 +7,7 @@ import {
   Sparkles, Brain, Search,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
+import { useUserStore } from '@/stores/userStore'
 import { cn } from '@/lib/utils'
 
 const NAV_SECTIONS = [
@@ -45,6 +46,7 @@ const NAV_SECTIONS = [
 
 export default function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, setCommandPaletteOpen } = useUIStore()
+  const { profile } = useUserStore()
   const location = useLocation()
 
   return (
@@ -256,6 +258,22 @@ export default function Sidebar() {
             )}
           </AnimatePresence>
         </NavLink>
+
+        {/* User Card */}
+        <div className={cn(
+          "flex items-center gap-2.5 px-3 py-2 rounded-xl border border-white/5 bg-white/[0.01] mt-1.5",
+          sidebarCollapsed && "justify-center px-2"
+        )}>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold uppercase flex-shrink-0">
+            {profile.name?.charAt(0) || 'U'}
+          </div>
+          {!sidebarCollapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-[color:var(--text-primary)] truncate">{profile.name || 'User'}</p>
+              <p className="text-[9px] text-[color:var(--text-tertiary)] truncate uppercase tracking-wider">{profile.role || 'Other'}</p>
+            </div>
+          )}
+        </div>
       </div>
     </motion.aside>
   )

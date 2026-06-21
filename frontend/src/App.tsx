@@ -19,9 +19,10 @@ const ExpensesPage = lazy(() => import('@/features/expenses/ExpensesPage'))
 const DocumentsPage = lazy(() => import('@/features/documents/DocumentsPage'))
 const AnalyticsPage = lazy(() => import('@/features/analytics/AnalyticsPage'))
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'))
+const Onboarding = lazy(() => import('@/features/onboarding/OnboardingPage'))
 
 export default function App() {
-  const { theme } = useUIStore()
+  const { theme, onboardingComplete } = useUIStore()
 
   // Apply theme on mount
   useEffect(() => {
@@ -63,7 +64,13 @@ export default function App() {
       />
 
       <Routes>
-        <Route path="/" element={<AppLayout />}>
+        {/* Onboarding route */}
+        <Route path="/onboarding" element={
+          <Suspense fallback={<PageLoader />}> 
+            <Onboarding />
+          </Suspense>
+        } />
+        <Route path="/" element={onboardingComplete ? <AppLayout /> : <Navigate to="/onboarding" replace />}>
           <Route
             index
             element={
