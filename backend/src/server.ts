@@ -1,32 +1,22 @@
 import http from 'http';
-import { Server } from 'socket.io';
 import app from './app';
 import { env } from './config/env';
 import { connectDb } from './config/database';
 import { logger } from './config/logger';
+import { initSocket } from './config/socket';
+import { startScheduler } from './scheduler';
 
 const server = http.createServer(app);
 
-// Socket.IO Setup
-const io = new Server(server, {
-  cors: {
-    origin: env.FRONTEND_URL,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
-
-io.on('connection', (socket) => {
-  logger.info(`🔌 Client connected to Socket.IO: ${socket.id}`);
-  
-  socket.on('disconnect', () => {
-    logger.info(`🔌 Client disconnected from Socket.IO: ${socket.id}`);
-  });
-});
+// Initialize Socket.IO
+initSocket(server);
 
 // Run server after connecting database
 async function startServer() {
   await connectDb();
+  
+  // Start background cron scheduler
+  startScheduler();
 
   const PORT = env.PORT;
   server.listen(PORT, () => {

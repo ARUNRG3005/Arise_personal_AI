@@ -1,12 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMessage, Conversation } from '@/types'
-
-interface StreamingChunk {
-  conversationId: string
-  content: string
-  done: boolean
-  toolCalls?: { name: string; status: 'running' | 'done' | 'error' }[]
-}
+import axios from 'axios'
 
 interface ChatStore {
   // Conversations list
@@ -44,7 +38,21 @@ interface ChatStore {
   // UI state
   showSuggestions: boolean
   setShowSuggestions: (show: boolean) => void
+
+  // Persistence Actions
+  isLoading: boolean
+  setIsLoading: (loading: boolean) => void
+  fetchConversations: () => Promise<void>
+  selectConversation: (id: string | null) => Promise<void>
+  deleteConversation: (id: string) => Promise<void>
 }
+
+// Helpers for Authorization header
+const getAuthHeaders = () => ({
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('arise-token') || ''}`,
+  }
+})
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   conversations: [],
@@ -89,4 +97,70 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   showSuggestions: true,
   setShowSuggestions: (show) => set({ showSuggestions: show }),
+
+  // Persistence Actions Implementation
+  isLoading: false,
+  setIsLoading: (loading) => set({ isLoading: loading }),
+
+  fetchConversations: async () => {
+    set({ isLoading: true })
+    try {
+      const response = await axios.get('/api/ai/conversations', getAuthHeaders())
+      if (response.data.success) {
+        set({ conversations: response.data.conversations })
+      }
+    } catch (error) {
+      console.error('[Zustand ChatStore] Failed to fetch conversations:', error)
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  selectConversation: async (id) => {
+    set({ activeConversationId: id, showSuggestions: id === null })
+    if (id === null) {
+      set({ messages: [] })
+      return
+    }
+
+    set({ isLoading: true })
+    try {
+      const response = await axios.get(`/api/ai/conversations/${id}`, getAuthHeaders())
+      if (response.data.success) {
+        const conv = response.data.conversation
+        set({ messages: conv.messages || [] })
+      }
+    } catch (error) {
+      console.error(`[Zustand ChatStore] Failed to fetch messages for conversation ${id}:`, error)
+      set({ messages: [] })
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  deleteConversation: async (id) => {
+    try {
+      const response = await axios.delete(`/api/ai/conversations/${id}`, getAuthHeaders())
+      if (response.data.success) {
+        set((s) => {
+          const nextConvs = s.conversations.filter((c) => c.id !== id)
+          const nextActiveId = s.activeConversationId === id ? (nextConvs[0]?.id || null) : s.activeConversationId
+          
+          // Trigger message loading for next active chat if selected
+          if (nextActiveId !== s.activeConversationId) {
+            setTimeout(() => {
+              get().selectConversation(nextActiveId)
+            }, 0)
+          }
+
+          return {
+            conversations: nextConvs,
+            activeConversationId: nextActiveId,
+          }
+        })
+      }
+    } catch (error) {
+      console.error(`[Zustand ChatStore] Failed to delete conversation ${id}:`, error)
+    }
+  }
 }))

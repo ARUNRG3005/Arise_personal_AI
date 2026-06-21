@@ -1,22 +1,23 @@
 import { motion } from 'framer-motion'
 import { Plus, MessageSquare, Trash2, Search } from 'lucide-react'
 import { format } from 'date-fns'
-import type { Conversation } from '../ChatPage'
+import type { Conversation } from '@/types'
 import { cn, truncate } from '@/lib/utils'
 import { useState } from 'react'
 
 interface Props {
   conversations: Conversation[]
-  activeId: string
-  onSelect: (id: string) => void
+  activeId: string | null
+  onSelect: (id: string | null) => void
+  onDelete?: (id: string) => void
   onNew: () => void
 }
 
-export default function ChatSidebar({ conversations, activeId, onSelect, onNew }: Props) {
+export default function ChatSidebar({ conversations, activeId, onSelect, onDelete, onNew }: Props) {
   const [search, setSearch] = useState('')
 
   const filtered = conversations.filter(c =>
-    c.title.toLowerCase().includes(search.toLowerCase())
+    (c.title || 'New Chat').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -80,16 +81,21 @@ export default function ChatSidebar({ conversations, activeId, onSelect, onNew }
                      'text-xs font-medium truncate',
                     activeId === conv.id ? 'text-[color:var(--text-primary)]' : 'text-[color:var(--text-secondary)]'
                   )}>
-                    {truncate(conv.title, 28)}
+                    {truncate(conv.title || 'New Chat', 28)}
                   </p>
                   <p className="text-[10px] text-[color:var(--text-muted)] mt-0.5">
-                    {conv.messages.length === 0 ? 'Empty' : `${conv.messages.length} messages`}
+                    {conv.messages ? `${conv.messages.length} messages` : '0 messages'}
                     {' · '}
-                    {format(conv.updatedAt, 'h:mm a')}
+                    {format(new Date(conv.updatedAt), 'h:mm a')}
                   </p>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation() /* TODO: delete */ }}
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    if (confirm('Delete this conversation?')) {
+                      onDelete?.(conv.id);
+                    }
+                  }}
                   className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[color:var(--text-tertiary)] hover:text-error-400 transition-all cursor-pointer"
                 >
                   <Trash2 className="w-3 h-3" />

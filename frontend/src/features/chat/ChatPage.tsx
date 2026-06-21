@@ -1,98 +1,64 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import ChatSidebar from './components/ChatSidebar'
 import ChatMessages from './components/ChatMessages'
 import ChatInput from './components/ChatInput'
 import { useVoiceAssistant, type VoiceState } from '@/services/voice/useVoiceAssistant'
+import { useChatStore } from '@/stores/chatStore'
+import type { ChatMessage, Conversation } from '@/types'
 import { SUGGESTED_PROMPTS } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
 
-export type Message = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
+export type Message = ChatMessage & {
+  timestamp?: Date
   isStreaming?: boolean
   tools?: string[]
-}
-
-export type Conversation = {
-  id: string
-  title: string
-  messages: Message[]
-  createdAt: Date
-  updatedAt: Date
-}
-
-// Simulated AI responses (will be replaced by real Groq streaming)
-const AI_RESPONSES: Record<string, string> = {
-  default: `I'm ARISE, your personal AI operating system. I can help you with:
-
-- 📋 **Tasks** — Create, organize, and prioritize your to-do list
-- 📅 **Calendar** — Schedule events and plan your day
-- 🔥 **Habits** — Track and build powerful routines
-- 📓 **Journal** — Reflect and process your thoughts
-- 📝 **Notes** — Capture and organize knowledge
-- 💰 **Expenses** — Track your spending
-- 📊 **Analytics** — Understand your productivity patterns
-
-What would you like to work on today?`,
-  tasks: `I see you want to work on tasks! Let me check what's on your plate today...
-
-**Today's Priority Tasks:**
-1. 🔴 Review AI Orchestrator design *(HIGH)*
-2. 🟡 Write Prisma schema migrations *(MEDIUM)*  
-3. 🟢 Set up Supabase storage bucket *(LOW)*
-
-You have **4 tasks** due today and **2 in progress**. Want me to help you prioritize or break any of these into smaller steps?`,
-  habits: `Here's your **habit progress** for today 🔥
-
-| Habit | Status | Streak |
-|-------|--------|--------|
-| Morning Exercise 🏋️ | ✅ Done | 12 days |
-| Read 30 minutes 📚 | ⏳ Pending | 5 days |
-| Meditate 🧘 | ⏳ Pending | 3 days |
-| Drink 2L water 💧 | ✅ Done | 8 days |
-
-You've completed **2 of 4** habits today. Your longest streak is **12 days** for Morning Exercise — keep it going!`,
-}
-
-function getAIResponse(message: string): string {
-  const lower = message.toLowerCase()
-  if (lower.includes('task') || lower.includes('todo')) return AI_RESPONSES.tasks
-  if (lower.includes('habit') || lower.includes('routine')) return AI_RESPONSES.habits
-  return AI_RESPONSES.default
 }
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 11)
 }
 
-const INITIAL_CONVERSATION: Conversation = {
-  id: 'conv-1',
-  title: 'New Chat',
-  messages: [],
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}
-
 export default function ChatPage() {
   const { conversationId } = useParams()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const initialQuery = searchParams.get('q')
 
-  const [conversations, setConversations] = useState<Conversation[]>([INITIAL_CONVERSATION])
-  const [activeConvId, setActiveConvId] = useState('conv-1')
+  const {
+    conversations,
+    activeConversationId,
+    messages,
+    inputValue,
+    setInputValue,
+    fetchConversations,
+    selectConversation,
+    deleteConversation,
+    addConversation,
+    setMessages,
+  } = useChatStore()
+
   const [isTyping, setIsTyping] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const [inputValue, setInputValue] = useState('')
   const voiceStateRef = useRef<VoiceState>('idle')
   const speakResponseRef = useRef<(text: string) => void>(() => {})
   const interruptRef = useRef<() => void>(() => {})
 
-  const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0]
+  // Fetch all conversations on mount
+  useEffect(() => {
+    fetchConversations()
+  }, [])
+
+  // Sync conversation ID from route param
+  useEffect(() => {
+    if (conversationId) {
+      selectConversation(conversationId)
+    } else {
+      selectConversation(null)
+    }
+  }, [conversationId])
 
   // Handle initial query from command palette
   useEffect(() => {
@@ -104,52 +70,38 @@ export default function ChatPage() {
   const handleSend = useCallback(async (content: string) => {
     if (!content.trim() || isTyping) return
 
-    const userMsg: Message = {
+    const userMsg = {
       id: generateId(),
-      role: 'user',
+      conversationId: activeConversationId || 'new',
+      role: 'user' as const,
       content: content.trim(),
-      timestamp: new Date(),
+      createdAt: new Date().toISOString(),
     }
 
-    // Update title if first message
-    setConversations(prev => prev.map(c => {
-      if (c.id === activeConvId) {
-        return {
-          ...c,
-          title: c.messages.length === 0 ? content.slice(0, 40) : c.title,
-          messages: [...c.messages, userMsg],
-          updatedAt: new Date(),
-        }
-      }
-      return c
-    }))
-
+    // Add user message locally
+    setMessages([...useChatStore.getState().messages, userMsg])
     setIsTyping(true)
 
     const assistantMsgId = generateId()
-    const streamingMsg: Message = {
+    const streamingMsg = {
       id: assistantMsgId,
-      role: 'assistant',
+      conversationId: activeConversationId || 'new',
+      role: 'assistant' as const,
       content: '',
-      timestamp: new Date(),
+      createdAt: new Date().toISOString(),
       isStreaming: true,
       tools: [],
     }
 
-    setConversations(prev => prev.map(c => {
-      if (c.id === activeConvId) {
-        return { ...c, messages: [...c.messages, streamingMsg] }
-      }
-      return c
-    }))
+    // Add placeholder assistant message
+    setMessages([...useChatStore.getState().messages, userMsg, streamingMsg])
 
     try {
-      // Build history context from current conversation
-      const currentConv = conversations.find(c => c.id === activeConvId);
-      const history = (currentConv?.messages || []).map(m => ({
+      // Build history context from current conversation messages
+      const history = useChatStore.getState().messages.slice(0, -2).map(m => ({
         role: m.role,
         content: m.content
-      }));
+      }))
 
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -157,77 +109,95 @@ export default function ChatPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('arise-token') || ''}`,
         },
-        body: JSON.stringify({ message: content, history }),
-      });
+        body: JSON.stringify({
+          message: content,
+          history,
+          conversationId: activeConversationId || undefined
+        }),
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to connect to AI server');
+        throw new Error('Failed to connect to AI server')
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      if (!reader) throw new Error('No readable stream available');
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      if (!reader) throw new Error('No readable stream available')
 
-      let accumulatedContent = '';
-      let isDone = false;
+      let accumulatedContent = ''
+      let isDone = false
+      let activeId = activeConversationId
 
       while (!isDone) {
-        const { value, done } = await reader.read();
+        const { value, done } = await reader.read()
         if (done) {
-          isDone = true;
-          break;
+          isDone = true
+          break
         }
 
-        const chunkText = decoder.decode(value);
-        const lines = chunkText.split('\n');
+        const chunkText = decoder.decode(value)
+        const lines = chunkText.split('\n')
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6));
-              if (data.error) {
-                accumulatedContent += `\n*Error: ${data.error}*`;
-              } else {
-                accumulatedContent = data.content;
+              const data = JSON.parse(line.slice(6))
+
+              // Check if we received conversationId from the backend
+              if (data.conversationId && !activeId) {
+                activeId = data.conversationId
+                
+                // Add conversation to store list
+                addConversation({
+                  id: data.conversationId,
+                  userId: 'user-id',
+                  title: content.substring(0, 40) + (content.length > 40 ? '...' : ''),
+                  isPinned: false,
+                  messages: [userMsg],
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                })
+
+                // Update URL to match persistent conversation ID
+                navigate(`/chat/${activeId}`, { replace: true })
+                useChatStore.setState({ activeConversationId: activeId })
               }
 
-              const runningTools = (data.toolCalls || []).map((tc: any) => `${tc.name} (${tc.status})`);
+              if (data.error) {
+                accumulatedContent += `\n*Error: ${data.error}*`
+              } else if (data.content !== undefined) {
+                accumulatedContent = data.content
+              }
 
-              setConversations(prev => prev.map(c => {
-                if (c.id === activeConvId) {
-                  return {
-                    ...c,
-                    messages: c.messages.map(m =>
-                      m.id === assistantMsgId ? {
-                        ...m,
-                        content: accumulatedContent,
-                        tools: runningTools,
-                        isStreaming: !isDone
-                      } : m
-                    ),
-                  }
-                }
-                return c
-              }));
+              const runningTools = (data.toolCalls || []).map((tc: any) => `${tc.name} (${tc.status})`)
+
+              // Update assistant message content in store
+              setMessages(
+                useChatStore.getState().messages.map(m =>
+                  m.id === assistantMsgId ? {
+                    ...m,
+                    content: accumulatedContent,
+                    tools: runningTools,
+                    isStreaming: !isDone
+                  } : m
+                )
+              )
             } catch (e) {
-              // Ignore partial JSON parsing errors on split boundaries
+              // Ignore partial JSON parsing errors
             }
           }
         }
       }
 
-      // Mark streaming complete
-      setConversations(prev => prev.map(c => {
-        if (c.id === activeConvId) {
-          return {
-            ...c,
-            messages: c.messages.map(m =>
-              m.id === assistantMsgId ? { ...m, isStreaming: false } : m
-            ),
-          }
-        }
-        return c
-      }));
+      // Mark streaming complete in store
+      setMessages(
+        useChatStore.getState().messages.map(m =>
+          m.id === assistantMsgId ? { ...m, isStreaming: false } : m
+        )
+      )
+
+      // Refresh conversations list in sidebar
+      fetchConversations()
 
       // Speak response if voice assistant was processing this message
       if (voiceStateRef.current === 'processing') {
@@ -235,29 +205,23 @@ export default function ChatPage() {
       }
 
     } catch (err: any) {
-      console.error(err);
+      console.error(err)
       if (voiceStateRef.current === 'processing') {
         interruptRef.current()
       }
-      setConversations(prev => prev.map(c => {
-        if (c.id === activeConvId) {
-          return {
-            ...c,
-            messages: c.messages.map(m =>
-              m.id === assistantMsgId ? {
-                ...m,
-                content: `An error occurred: ${err.message || 'Unable to reach the AI Operating System.'}`,
-                isStreaming: false
-              } : m
-            ),
-          }
-        }
-        return c
-      }));
+      setMessages(
+        useChatStore.getState().messages.map(m =>
+          m.id === assistantMsgId ? {
+            ...m,
+            content: `An error occurred: ${err.message || 'Unable to reach the AI Operating System.'}`,
+            isStreaming: false
+          } : m
+        )
+      )
     } finally {
-      setIsTyping(false);
+      setIsTyping(false)
     }
-  }, [activeConvId, isTyping])
+  }, [activeConversationId, isTyping, navigate, addConversation, setMessages, fetchConversations])
 
   const { state: voiceState, startListening, stopListening, interrupt, speakResponse } = useVoiceAssistant({
     onSend: (text) => {
@@ -286,26 +250,19 @@ export default function ChatPage() {
   }, [voiceState, startListening, stopListening, interrupt])
 
   const handleNewChat = () => {
-    const newConv: Conversation = {
-      id: generateId(),
-      title: 'New Chat',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    setConversations(prev => [newConv, ...prev])
-    setActiveConvId(newConv.id)
+    navigate('/chat')
   }
 
-  const isEmpty = activeConv.messages.length === 0
+  const isEmpty = messages.length === 0
 
   return (
     <div className="flex h-full overflow-hidden">
       {/* Chat sidebar */}
       <ChatSidebar
         conversations={conversations}
-        activeId={activeConvId}
-        onSelect={setActiveConvId}
+        activeId={activeConversationId}
+        onSelect={(id) => navigate(id ? `/chat/${id}` : '/chat')}
+        onDelete={deleteConversation}
         onNew={handleNewChat}
       />
 
@@ -358,8 +315,8 @@ export default function ChatPage() {
           ) : (
             /* Messages */
             <ChatMessages
-              key={activeConvId}
-              messages={activeConv.messages}
+              key={activeConversationId || 'new'}
+              messages={messages as any}
               isTyping={isTyping}
             />
           )}

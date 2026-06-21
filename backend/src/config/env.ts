@@ -15,6 +15,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   AI_PROVIDER: z.enum(['groq', 'openai', 'gemini', 'claude', 'ollama']).default('groq'),
   GROQ_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
   GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
   SINGLE_USER_MODE: z.coerce.boolean().default(true),
   DEFAULT_USER_EMAIL: z.string().email().default('user@arise.local'),
@@ -46,6 +47,7 @@ export const env = parsed.success
       JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
       AI_PROVIDER: (process.env.AI_PROVIDER || 'groq') as 'groq' | 'openai' | 'gemini' | 'claude' | 'ollama',
       GROQ_API_KEY: process.env.GROQ_API_KEY || '',
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
       GROQ_MODEL: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
       SINGLE_USER_MODE: process.env.SINGLE_USER_MODE !== 'false',
       DEFAULT_USER_EMAIL: process.env.DEFAULT_USER_EMAIL || 'user@arise.local',
@@ -55,3 +57,12 @@ export const env = parsed.success
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
       SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || '',
     };
+
+// Critical security check for production environments
+if (env.NODE_ENV === 'production' && (
+  env.JWT_SECRET.includes('change-in-production') ||
+  env.JWT_SECRET === 'arise-jwt-secret-change-in-production-make-it-long-and-random'
+)) {
+  console.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET has not been changed from default in production. Exiting.');
+  process.exit(1);
+}

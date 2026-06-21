@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import OpenAI from 'openai';
 import { AIProvider, ChatMessage, ChatOptions, ToolDefinition } from './AIProvider';
 import { env } from '../../config/env';
 import { logger } from '../../config/logger';
@@ -6,6 +7,7 @@ import { logger } from '../../config/logger';
 export class GroqProvider implements AIProvider {
   readonly name = 'groq';
   private client: Groq | null = null;
+  private openaiClient: OpenAI | null = null;
 
   constructor() {
     const apiKey = env.GROQ_API_KEY;
@@ -13,6 +15,12 @@ export class GroqProvider implements AIProvider {
       this.client = new Groq({ apiKey });
     } else {
       logger.warn('⚠️ GROQ_API_KEY is not set. GroqProvider will operate in mock mode.');
+    }
+
+    if (env.OPENAI_API_KEY) {
+      this.openaiClient = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    } else {
+      logger.info('OpenAI API Key is not set. MemoryAgent will use deterministic mock embeddings.');
     }
   }
 
@@ -114,11 +122,21 @@ export class GroqProvider implements AIProvider {
   }
 
   async embed(text: string): Promise<number[]> {
-    // Groq doesn't provide robust embeddings endpoints in all regions, or they change.
-    // If Groq key is missing, or we need vector, let's fallback to standard 1536 size mock embedding or openai/ollama if needed.
-    // Since we must support pgvector (size 1536), we will generate a stable mock float array of size 1536 if no real embedder is set up,
-    // or if the model is set. Let's create a stable deterministic mock embedding for local/testing.
-    logger.debug(`Generating embeddings for text: "${text.substring(0, 30)}..."`);
+    if (this.openaiClient) {
+      try {
+        const response = await this.openaiClient.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: text,
+        });
+        logger.info(`Successfully generated OpenAI text-embedding-3-small vector of size: ${response.data[0].embedding.length}`);
+        return response.data[0].embedding;
+      } catch (error) {
+        logger.error('Failed to generate real OpenAI embeddings, falling back to mock:', error);
+      }
+    }
+
+    // Fallback to mock embedding
+    logger.debug(`Generating mock embeddings for text: "${text.substring(0, 30)}..."`);
     const embedding = new Array(1536).fill(0);
     // Simple deterministic hash mapping to floats between -1 and 1
     for (let i = 0; i < text.length; i++) {

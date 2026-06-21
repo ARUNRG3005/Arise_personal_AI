@@ -4,8 +4,14 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Sparkles, User } from 'lucide-react'
 import { format } from 'date-fns'
-import type { Message } from '../ChatPage'
+import type { ChatMessage } from '@/types'
 import { cn } from '@/lib/utils'
+
+export type Message = ChatMessage & {
+  timestamp?: Date
+  isStreaming?: boolean
+  tools?: string[]
+}
 
 interface Props {
   messages: Message[]
@@ -71,7 +77,7 @@ export default function ChatMessages({ messages, isTyping }: Props) {
                 )}
               </div>
               <span className="text-[10px] text-[color:var(--text-muted)] px-1">
-                {format(msg.timestamp, 'h:mm a')}
+                {format(msg.createdAt ? new Date(msg.createdAt) : (msg.timestamp || new Date()), 'h:mm a')}
               </span>
             </div>
           </motion.div>

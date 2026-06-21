@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
+import { Toaster, toast } from 'react-hot-toast'
 import { lazy, Suspense, useEffect } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import PageLoader from '@/components/shared/PageLoader'
 import CommandPalette from '@/components/layout/CommandPalette'
 import { useUIStore } from '@/stores/uiStore'
+import { getSocket } from '@/lib/socket'
 
 // Lazy loaded pages
 const Dashboard = lazy(() => import('@/features/dashboard/DashboardPage'))
@@ -23,6 +24,28 @@ const Onboarding = lazy(() => import('@/features/onboarding/OnboardingPage'))
 
 export default function App() {
   const { theme, onboardingComplete } = useUIStore()
+
+  // Connect Socket.IO and listen for notifications
+  useEffect(() => {
+    const socket = getSocket()
+    
+    // Listen for notification:new
+    socket.on('notification:new', (notification: any) => {
+      console.log('🔔 Received socket notification:', notification)
+      toast(notification.body, {
+        icon: '🔔',
+        style: {
+          background: '#1e1b4b',
+          color: '#f9fafb',
+          border: '1px solid rgba(129, 140, 248, 0.3)',
+        }
+      })
+    })
+
+    return () => {
+      socket.off('notification:new')
+    }
+  }, [])
 
   // Apply theme on mount
   useEffect(() => {

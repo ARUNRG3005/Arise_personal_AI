@@ -13,7 +13,17 @@ const app = express();
 
 // Security and utility Middlewares
 app.use(helmet({
-  contentSecurityPolicy: false, // Turn off for dev convenience
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "http://localhost:3001", "http://127.0.0.1:3001", "ws://localhost:3001", "ws://127.0.0.1:3001", "https://*.supabase.co"],
+      imgSrc: ["'self'", "data:", "https://*.supabase.co"],
+      mediaSrc: ["'self'", "data:"],
+    },
+  },
 }));
 app.use(cors({
   origin: env.FRONTEND_URL,
