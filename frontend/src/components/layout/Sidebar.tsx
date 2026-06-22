@@ -9,6 +9,7 @@ import {
 import { useUIStore } from '@/stores/uiStore'
 import { useUserStore } from '@/stores/userStore'
 import { cn } from '@/lib/utils'
+import AriseOrb from '@/components/shared/AriseOrb'
 
 const NAV_SECTIONS = [
   {
@@ -60,9 +61,7 @@ export default function Sidebar() {
       <div className="flex items-center h-16 px-4 border-b border-[color:var(--border-subtle)]">
         <div className="flex items-center gap-3 min-w-0">
           {/* Logo icon */}
-          <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center flex-shrink-0 shadow-glow-primary">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <AriseOrb size="sm" />
 
           <AnimatePresence>
             {!sidebarCollapsed && (
@@ -73,9 +72,9 @@ export default function Sidebar() {
                 transition={{ duration: 0.2 }}
                 className="min-w-0"
               >
-                <span className="font-bold text-lg gradient-text tracking-tight">ARISE</span>
-                <p className="text-[10px] text-[color:var(--text-tertiary)] font-medium -mt-0.5 uppercase tracking-widest">
-                  Personal AI
+                <span className="font-bold text-lg font-mono text-[#00cfff] tracking-tight">ARISE</span>
+                <p className="text-[10px] text-[#8ab6d6]/60 font-mono -mt-0.5 uppercase tracking-widest">
+                  JARVIS EDITION
                 </p>
               </motion.div>
             )}
@@ -167,14 +166,14 @@ export default function Sidebar() {
                         'transition-all duration-200 cursor-pointer relative group',
                         sidebarCollapsed && 'justify-center px-2',
                         isActive
-                          ? 'bg-primary-600/15 text-primary-300 border border-primary-500/20'
+                          ? 'bg-[#00cfff]/15 text-[#00cfff] border border-[#00cfff]/35 shadow-[0_0_12px_rgba(0,207,255,0.15)] font-mono'
                           : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-white/[0.04]'
                       )}
                     >
                       <ItemIcon
                         className={cn(
                           'w-[18px] h-[18px] flex-shrink-0',
-                          isActive ? 'text-primary-400' : ''
+                          isActive ? 'text-[#00cfff]' : ''
                         )}
                       />
 
@@ -189,7 +188,7 @@ export default function Sidebar() {
                           >
                             <span className="truncate">{item.label}</span>
                             {'badge' in item && item.badge && (
-                              <span className="badge badge-primary text-[10px] py-0.5 ml-auto">
+                              <span className="badge badge-accent text-[10px] py-0.5 ml-auto">
                                 {item.badge}
                               </span>
                             )}
@@ -199,7 +198,7 @@ export default function Sidebar() {
 
                       {/* Active indicator dot (collapsed mode) */}
                       {isActive && sidebarCollapsed && (
-                        <span className="absolute right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary-400" />
+                        <span className="absolute right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#00cfff] shadow-[0_0_6px_rgba(0,207,255,0.8)]" />
                       )}
                     </NavLink>
                   )
@@ -240,12 +239,12 @@ export default function Sidebar() {
               'transition-all duration-200',
               sidebarCollapsed && 'justify-center px-2',
               isActive
-                ? 'bg-primary-600/15 text-primary-300'
+                ? 'bg-[#00cfff]/15 text-[#00cfff] border border-[#00cfff]/35 shadow-[0_0_12px_rgba(0,207,255,0.15)] font-mono'
                 : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-white/[0.04]'
             )
           }
         >
-          <Settings className="w-[18px] h-[18px] flex-shrink-0" />
+          <Settings className={cn("w-[18px] h-[18px] flex-shrink-0")} />
           <AnimatePresence>
             {!sidebarCollapsed && (
               <motion.span
@@ -261,18 +260,27 @@ export default function Sidebar() {
 
         {/* User Card */}
         <div className={cn(
-          "flex items-center gap-2.5 px-3 py-2 rounded-xl border border-white/5 bg-white/[0.01] mt-1.5",
+          "flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[#00cfff]/10 bg-white/[0.01] mt-1.5",
           sidebarCollapsed && "justify-center px-2"
         )}>
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold uppercase flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#00cfff] to-blue-600 flex items-center justify-center text-[#020d18] text-xs font-bold uppercase flex-shrink-0">
             {profile.name?.charAt(0) || 'U'}
           </div>
           {!sidebarCollapsed && (
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-[color:var(--text-primary)] truncate">{profile.name || 'User'}</p>
-              <p className="text-[9px] text-[color:var(--text-tertiary)] truncate uppercase tracking-wider">{profile.role || 'Other'}</p>
+              <p className="text-[9px] text-[#8ab6d6]/60 truncate font-mono uppercase tracking-wider">{profile.role || 'Other'}</p>
             </div>
           )}
+        </div>
+
+        {/* Blinking System Online Status */}
+        <div className={cn(
+          "flex items-center gap-2 px-3 py-2 text-[9px] font-mono text-[#00cfff]/60 uppercase tracking-widest border-t border-[#00cfff]/5 mt-1",
+          sidebarCollapsed && "justify-center px-2"
+        )}>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00cfff] shadow-[0_0_8px_#00cfff] animate-ping" />
+          {!sidebarCollapsed && <span>System Online</span>}
         </div>
       </div>
     </motion.aside>

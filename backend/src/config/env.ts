@@ -24,6 +24,7 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SUPABASE_STORAGE_BUCKET: z.string().optional(),
+  TAVILY_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -56,6 +57,7 @@ export const env = parsed.success
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
       SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || '',
+      TAVILY_API_KEY: process.env.TAVILY_API_KEY || '',
     };
 
 // Critical security check for production environments
@@ -65,4 +67,9 @@ if (env.NODE_ENV === 'production' && (
 )) {
   console.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET has not been changed from default in production. Exiting.');
   process.exit(1);
+}
+
+// Log warning if Tavily key is missing
+if (!env.TAVILY_API_KEY) {
+  console.warn('⚠️ WARNING: TAVILY_API_KEY is not defined. Live web search will not be available, falling back to LLM-only responses.');
 }

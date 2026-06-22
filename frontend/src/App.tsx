@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import PageLoader from '@/components/shared/PageLoader'
 import CommandPalette from '@/components/layout/CommandPalette'
+import BriefingToast from '@/components/layout/BriefingToast'
 import { useUIStore } from '@/stores/uiStore'
 import { getSocket } from '@/lib/socket'
 
@@ -63,6 +64,9 @@ export default function App() {
     <BrowserRouter>
       {/* Global Command Palette */}
       <CommandPalette />
+
+      {/* Morning Briefing Toast Overlay */}
+      <BriefingToast />
 
       {/* Toast notifications */}
       <Toaster

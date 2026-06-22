@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { speechRecognition } from './speechRecognition';
 import { speechSynthesis } from './speechSynthesis';
+import { WakeWordDetector } from './wakeWord';
 import { toast } from 'react-hot-toast';
-
-export type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking';
+import { useVoiceStore, type VoiceState } from '../../stores/voiceStore';
+export type { VoiceState };
 
 interface UseVoiceAssistantProps {
   onSend: (text: string) => void;
@@ -11,11 +12,16 @@ interface UseVoiceAssistantProps {
 }
 
 export function useVoiceAssistant({ onSend, onTranscriptChange }: UseVoiceAssistantProps) {
-  const [state, setState] = useState<VoiceState>('idle');
-  const [transcript, setTranscript] = useState('');
+  const { state, setState, transcript, setTranscript } = useVoiceStore();
   const lastTranscriptRef = useRef('');
+  const stateRef = useRef<VoiceState>('idle');
+  const detectorRef = useRef<WakeWordDetector | null>(null);
 
-  // Update transcript ref so event handlers can read current value
+  // Keep stateRef updated synchronously for event callbacks
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   useEffect(() => {
     lastTranscriptRef.current = transcript;
   }, [transcript]);
@@ -40,31 +46,32 @@ export function useVoiceAssistant({ onSend, onTranscriptChange }: UseVoiceAssist
       onError: (err) => {
         console.error('Speech recognition error callback:', err);
         if (err === 'not-allowed') {
-          toast.error('Microphone permission denied. Please allow microphone access in your browser settings.');
-        } else if (err === 'network') {
-          const isBrave = !!(navigator as any).brave;
-          if (isBrave) {
-            toast.error('Voice input failed. Brave browser disables Web Speech API by default. Please go to brave://settings/shields and enable Web Speech API, or use Google Chrome.', { duration: 6000 });
-          } else {
-            toast.error('Voice input requires an active internet connection, or Google speech servers are blocked/offline in your browser.', { duration: 5000 });
-          }
+          toast.error('Microphone permission denied.');
         } else if (err === 'no-speech') {
-          toast.error('No speech was detected. Please speak closer to the microphone.');
-        } else if (err === 'aborted') {
-          // Aborted is normal when user cancels or types, no need to toast
-        } else {
+          toast.error('No speech detected.');
+        } else if (err !== 'aborted') {
           toast.error(`Voice error: ${err}`);
         }
-        setState('idle');
+        
+        // Return to wake loop if active
+        if (stateRef.current !== 'idle') {
+          startWakeWord();
+        } else {
+          setState('idle');
+        }
       },
       onEnd: () => {
-        // If we still have transcript when recognition ended naturally, submit it!
         const finalVal = lastTranscriptRef.current.trim();
         if (finalVal) {
           setState('processing');
           onSend(finalVal);
         } else {
-          setState('idle');
+          // No command said, return to wake word if active
+          if (stateRef.current !== 'idle') {
+            startWakeWord();
+          } else {
+            setState('idle');
+          }
         }
       }
     });
@@ -77,11 +84,31 @@ export function useVoiceAssistant({ onSend, onTranscriptChange }: UseVoiceAssist
   const interrupt = useCallback(() => {
     speechSynthesis.cancel();
     speechRecognition.abort();
+    detectorRef.current?.stop();
+    setState('idle');
+  }, []);
+
+  const startWakeWord = useCallback(() => {
+    if (!speechRecognition.isSupported()) return;
+    speechRecognition.abort();
+    setState('wake');
+    detectorRef.current?.start();
+  }, []);
+
+  const stopWakeWord = useCallback(() => {
+    detectorRef.current?.stop();
+    speechRecognition.abort();
+    speechSynthesis.cancel();
     setState('idle');
   }, []);
 
   const speakResponse = useCallback((text: string) => {
     if (!speechSynthesis.isSupported()) {
+      if (stateRef.current !== 'idle') {
+        startWakeWord();
+      } else {
+        setState('idle');
+      }
       return;
     }
 
@@ -91,31 +118,49 @@ export function useVoiceAssistant({ onSend, onTranscriptChange }: UseVoiceAssist
         setState('speaking');
       },
       onEnd: () => {
-        setState('idle');
+        if (stateRef.current !== 'idle') {
+          startWakeWord();
+        } else {
+          setState('idle');
+        }
       },
       onError: (err) => {
         console.error('Speech synthesis error callback:', err);
-        setState('idle');
+        if (stateRef.current !== 'idle') {
+          startWakeWord();
+        } else {
+          setState('idle');
+        }
       }
     });
-  }, []);
+  }, [startWakeWord]);
 
-  // Cleanup on unmount
+  // Create wake word detector on mount
   useEffect(() => {
+    detectorRef.current = new WakeWordDetector(() => {
+      console.log('[ARISE] Wake word "Hey ARISE" detected. Recording command...');
+      detectorRef.current?.stop();
+      startListening();
+    });
+
     return () => {
-      speechSynthesis.cancel();
+      detectorRef.current?.stop();
       speechRecognition.abort();
+      speechSynthesis.cancel();
     };
-  }, []);
+  }, [startListening]);
 
   return {
     state,
-    setState, // Expose setState so ChatPage can manage state changes (e.g. going from typing to processing)
+    setState,
     transcript,
     startListening,
     stopListening,
     interrupt,
     speakResponse,
+    isWakeWordActive: state === 'wake',
+    startWakeWord,
+    stopWakeWord,
     isSupported: speechRecognition.isSupported() && speechSynthesis.isSupported()
   };
 }

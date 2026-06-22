@@ -45,6 +45,7 @@ interface ChatStore {
   fetchConversations: () => Promise<void>
   selectConversation: (id: string | null) => Promise<void>
   deleteConversation: (id: string) => Promise<void>
+  renameConversation: (id: string, title: string) => Promise<void>
 }
 
 // Helpers for Authorization header
@@ -161,6 +162,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       }
     } catch (error) {
       console.error(`[Zustand ChatStore] Failed to delete conversation ${id}:`, error)
+    }
+  },
+
+  renameConversation: async (id, title) => {
+    try {
+      const response = await axios.patch(`/api/ai/conversations/${id}`, { title }, getAuthHeaders())
+      if (response.data.success) {
+        set((s) => ({
+          conversations: s.conversations.map((c) => (c.id === id ? { ...c, title } : c)),
+        }))
+      }
+    } catch (error) {
+      console.error(`[Zustand ChatStore] Failed to rename conversation ${id}:`, error)
     }
   }
 }))

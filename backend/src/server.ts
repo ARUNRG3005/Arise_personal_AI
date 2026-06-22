@@ -6,10 +6,13 @@ import { logger } from './config/logger';
 import { initSocket } from './config/socket';
 import { startScheduler } from './scheduler';
 
+import { registerMorningBriefing } from './jobs/morningBriefing';
+
 const server = http.createServer(app);
 
 // Initialize Socket.IO
-initSocket(server);
+const io = initSocket(server);
+registerMorningBriefing(io);
 
 // Run server after connecting database
 async function startServer() {

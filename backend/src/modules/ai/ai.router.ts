@@ -65,6 +65,34 @@ router.delete('/conversations/:id', authMiddleware, async (req: AuthenticatedReq
   }
 });
 
+// PATCH a conversation title
+router.patch('/conversations/:id', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  const id = req.params.id as string;
+  const { title } = req.body;
+
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    return res.status(400).json({ error: 'Title is required and must be a string.' });
+  }
+
+  try {
+    const conversation = await prisma.conversation.findFirst({
+      where: { id, userId },
+    });
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found.' });
+    }
+    const updated = await prisma.conversation.update({
+      where: { id },
+      data: { title: title.trim() },
+    });
+    res.json({ success: true, conversation: updated });
+  } catch (error) {
+    logger.error('Error updating conversation title:', error);
+    res.status(500).json({ error: 'Failed to update conversation title.' });
+  }
+});
+
 // POST to Chat (with stream response and DB persistence)
 router.post('/chat', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   const { message, history = [], conversationId } = req.body;
@@ -118,6 +146,7 @@ router.post('/chat', authMiddleware, async (req: AuthenticatedRequest, res: Resp
     const stream = orchestrator.processMessage(message, history, userId);
     let accumulatedContent = '';
     let finalToolCalls: any[] = [];
+    let sources: any[] = [];
 
     for await (const chunk of stream) {
       if (chunk.content) {
@@ -125,6 +154,9 @@ router.post('/chat', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       }
       if (chunk.toolCalls) {
         finalToolCalls = chunk.toolCalls;
+      }
+      if (chunk.sources) {
+        sources = chunk.sources;
       }
       res.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
@@ -137,6 +169,7 @@ router.post('/chat', authMiddleware, async (req: AuthenticatedRequest, res: Resp
           role: 'assistant',
           content: accumulatedContent,
           toolCalls: finalToolCalls.length > 0 ? finalToolCalls : undefined,
+          metadata: sources.length > 0 ? { sources } : undefined,
         },
       });
 
@@ -148,9 +181,22 @@ router.post('/chat', authMiddleware, async (req: AuthenticatedRequest, res: Resp
     }
 
     res.end();
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error in AI chat stream endpoint:', error);
-    res.write(`data: ${JSON.stringify({ error: 'An error occurred during response generation.' })}\n\n`);
+    let errMsg = 'An error occurred during response generation.';
+    
+    if (error) {
+      const errorBody = error.error || error.body || error;
+      const rawMessage = errorBody?.message || error.message || '';
+      
+      if (rawMessage.toLowerCase().includes('rate limit') || error.status === 429 || error.statusCode === 429) {
+        errMsg = '⚠️ Groq API Rate Limit reached. Please wait a few minutes before retrying, or configure a secondary API provider in your env.';
+      } else if (rawMessage) {
+        errMsg = `⚠️ AI Provider Error: ${rawMessage}`;
+      }
+    }
+    
+    res.write(`data: ${JSON.stringify({ error: errMsg })}\n\n`);
     res.end();
   }
 });
@@ -207,6 +253,22 @@ Format example: "This is a React + Node.js AI project currently under active dev
   } catch (error) {
     logger.error('Error generating AI repo summary:', error);
     res.status(500).json({ error: 'Failed to generate repository summary.' });
+  }
+});
+
+import { generateBriefingForUser } from '../../jobs/morningBriefing';
+import { getSocketIO } from '../../config/socket';
+
+router.post('/test-briefing', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  try {
+    const briefing = await generateBriefingForUser(userId);
+    const io = getSocketIO();
+    io.to(userId).emit('morning_briefing', briefing);
+    res.json({ success: true, message: 'Test morning briefing triggered.', briefing });
+  } catch (error: any) {
+    logger.error('Error triggering test morning briefing:', error);
+    res.status(500).json({ error: error.message || 'Failed to trigger test morning briefing.' });
   }
 });
 

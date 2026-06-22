@@ -16,7 +16,16 @@ export default function AppLayout() {
   }, [location.pathname, setActivePage])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[color:var(--bg-base)] bg-mesh">
+    <div className="flex h-screen overflow-hidden bg-[color:var(--bg-base)] bg-mesh relative">
+      {/* Global scan line */}
+      <div className="fixed left-0 w-full h-[2px] bg-[#00cfff]/8 pointer-events-none z-50 animate-scan" />
+
+      {/* Cyber HUD corner decorations */}
+      <div className="fixed top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-[#00cfff]/20 pointer-events-none z-45" />
+      <div className="fixed top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-[#00cfff]/20 pointer-events-none z-45" />
+      <div className="fixed bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-[#00cfff]/20 pointer-events-none z-45" />
+      <div className="fixed bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-[#00cfff]/20 pointer-events-none z-45" />
+
       {/* Sidebar */}
       <Sidebar />
 

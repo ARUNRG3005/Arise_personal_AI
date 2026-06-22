@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
-import { Sparkles, Zap, Target, Brain, TrendingUp, Plus, ArrowRight, CheckCircle2, Circle, Flame, Calendar, Clock, Trash2, Database, Activity, GitFork } from 'lucide-react'
+import { Sparkles, Target, ArrowRight, CheckCircle2, Circle, Flame, Calendar, Clock, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getGreeting, getDayPhase } from '@/lib/utils'
 import QuickCapture from './components/QuickCapture'
@@ -10,8 +10,9 @@ import { cn } from '@/lib/utils'
 import { useUserStore } from '@/stores/userStore'
 import { useTaskStore } from '@/stores/taskStore'
 import { githubService } from '@/services/github/githubService'
+import HudCard from '@/components/shared/HudCard'
 
-// Mock data for Phase 1 (will be replaced by real API data)
+// Mock data (will be replaced by real API data)
 const MOCK_HABITS = [
   { id: '1', title: 'Morning Exercise', icon: '🏋️', completed: true, streak: 12 },
   { id: '2', title: 'Read 30 minutes', icon: '📚', completed: false, streak: 5 },
@@ -20,15 +21,9 @@ const MOCK_HABITS = [
 ]
 
 const MOCK_EVENTS = [
-  { id: '1', title: 'Team standup', start: new Date(Date.now() + 3600000).toISOString(), color: '#6366f1' },
-  { id: '2', title: 'Study session', start: new Date(Date.now() + 7200000).toISOString(), color: '#a855f7' },
-  { id: '3', title: 'Gym', start: new Date(Date.now() + 18000000).toISOString(), color: '#10b981' },
-]
-
-const AI_SUGGESTIONS = [
-  "You have 4 tasks due today. Want me to prioritize them?",
-  "Your best focus time is usually 9–11 AM. Block it today?",
-  "You haven't journaled in 2 days. Want to reflect now?",
+  { id: '1', title: 'Team standup', start: new Date(Date.now() + 3600000).toISOString(), color: '#00cfff' },
+  { id: '2', title: 'Study session', start: new Date(Date.now() + 7200000).toISOString(), color: '#8884d8' },
+  { id: '3', title: 'Gym', start: new Date(Date.now() + 18000000).toISOString(), color: '#00fa9a' },
 ]
 
 const DAILY_QUOTE = {
@@ -53,6 +48,13 @@ export default function DashboardPage() {
   const phase = getDayPhase()
   const greeting = getGreeting()
   const today = format(new Date(), "EEEE, MMMM d")
+
+  // Live Digital Clock
+  const [time, setTime] = useState(new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Live GitHub state
   const githubUsername = profile.githubUsername || 'ARUNRG3005'
@@ -123,54 +125,36 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
-      {/* Header greeting */}
+      {/* Header greeting & Clock */}
       <motion.div
         variants={stagger}
         initial="initial"
         animate="animate"
-        className="flex items-start justify-between gap-4"
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-[#00cfff]/15"
       >
         <motion.div variants={fadeUp}>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">
               {phase === 'morning' ? '☀️' : phase === 'afternoon' ? '🌤️' : phase === 'evening' ? '🌆' : '🌙'}
             </span>
-            <h2 className="text-2xl font-bold text-[color:var(--text-primary)]">
-              {greeting}, <span className="gradient-text">{name}</span>
+            <h2 className="text-2xl font-mono font-bold text-[#e8f7ff] uppercase tracking-wide">
+              {greeting}, <span className="text-[#00cfff] shadow-glow-sm">{name}</span>
             </h2>
           </div>
-          <p className="text-sm text-[color:var(--text-secondary)]">{today} · Let's make today count.</p>
+          <p className="text-xs font-mono text-[#8ab6d6]/60 uppercase tracking-widest">{today} · SYSTEM_STATUS: OPERATIONAL</p>
         </motion.div>
 
-        {/* Productivity ring */}
-        <motion.div variants={fadeUp} className="flex items-center gap-3">
-          <div className="relative w-16 h-16">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 60 60">
-              <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
-              <circle
-                cx="30" cy="30" r="26"
-                fill="none"
-                stroke="url(#progress-grad)"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 26}`}
-                strokeDashoffset={`${2 * Math.PI * 26 * (1 - productivity / 100)}`}
-                style={{ transition: 'stroke-dashoffset 1s ease-out' }}
-              />
-              <defs>
-                <linearGradient id="progress-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#6366f1" />
-                  <stop offset="100%" stopColor="#a855f7" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-[color:var(--text-primary)]">{productivity}%</span>
-            </div>
+        {/* Live digital clock */}
+        <motion.div variants={fadeUp} className="flex flex-col items-start sm:items-end text-left sm:text-right font-mono">
+          <div className="text-3xl font-bold text-[#00cfff] tracking-widest drop-shadow-[0_0_8px_rgba(0,207,255,0.4)]">
+            {format(time, 'HH:mm:ss')}
           </div>
-          <div>
-            <p className="text-xs font-medium text-[color:var(--text-primary)]">Productivity</p>
-            <p className="text-xs text-[color:var(--text-tertiary)]">Today's score</p>
+          <div className="text-[10px] text-[#8ab6d6]/60 uppercase tracking-widest mt-1">
+            {format(time, 'zzz · yyyy-MM-dd')}
+          </div>
+          <div className="flex items-center gap-1.5 mt-1 text-[9px] text-[#00cfff]/70">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00cfff] animate-ping" />
+            <span>SECURE_LINK // ACTIVE</span>
           </div>
         </motion.div>
       </motion.div>
@@ -194,219 +178,200 @@ export default function DashboardPage() {
 
         {/* Right column */}
         <div className="col-span-12 lg:col-span-7 space-y-5">
-          {/* AI Suggestion */}
+          {/* AI Insight */}
           <motion.div variants={fadeUp}>
-            <div className="card gradient-border relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-secondary-600/5 pointer-events-none" />
-              <div className="relative flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center flex-shrink-0 shadow-glow-primary animate-pulse-slow">
-                  <Sparkles className="w-4 h-4 text-white" />
+            <HudCard
+              title="AI DIRECTIVE"
+              subtitle="SYSTEM INTEL FEED"
+              headerExtra={<span className="w-2 h-2 rounded-full bg-[#00cfff] shadow-[0_0_6px_#00cfff]" />}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#00cfff]/10 flex items-center justify-center flex-shrink-0 border border-[#00cfff]/25 text-[#00cfff] shadow-glow-sm">
+                  <Sparkles className="w-5 h-5 animate-pulse" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-xs font-semibold text-primary-400 uppercase tracking-wide">AI Insight</p>
-                    <span className="dot-online" />
-                  </div>
-                  <p className="text-sm text-[color:var(--text-primary)] leading-relaxed">
+                  <p className="text-sm text-[#e8f7ff] leading-relaxed font-sans">
                     {aiSuggestions[0]}
                   </p>
                 </div>
                 <button
                   onClick={() => navigate('/chat')}
-                  className="p-2 rounded-lg hover:bg-primary-500/15 transition-colors flex-shrink-0"
+                  className="p-2 rounded-lg bg-[#00cfff]/5 hover:bg-[#00cfff]/15 text-[#00cfff] transition-colors flex-shrink-0 border border-[#00cfff]/10"
                 >
-                  <ArrowRight className="w-4 h-4 text-primary-400" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </HudCard>
           </motion.div>
 
           {/* Stats row */}
           <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Tasks Done', value: `${completedTasks}/${tasks.length}`, icon: Target, color: 'text-primary-400', bg: 'bg-primary-500/10' },
-              { label: 'Habits', value: `${completedHabits}/${MOCK_HABITS.length}`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-              { label: 'Events', value: `${MOCK_EVENTS.length}`, icon: Calendar, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+              { label: 'Tasks Done', value: `${completedTasks}/${tasks.length}`, icon: Target, color: 'text-[#00cfff]', bg: 'bg-[#00cfff]/10 border border-[#00cfff]/15', progress: tasks.length ? (completedTasks / tasks.length) * 100 : 0 },
+              { label: 'Habits Active', value: `${completedHabits}/${MOCK_HABITS.length}`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10 border border-orange-500/15', progress: MOCK_HABITS.length ? (completedHabits / MOCK_HABITS.length) * 100 : 0 },
+              { label: 'Events Today', value: `${MOCK_EVENTS.length}`, icon: Calendar, color: 'text-purple-400', bg: 'bg-purple-500/10 border border-purple-500/15', progress: 100 },
             ].map((stat) => {
               const StatIcon = stat.icon
               return (
-                <div key={stat.label} className="card card-hover text-center p-4">
+                <HudCard key={stat.label} className="text-center" progress={stat.progress}>
                   <div className={cn('w-9 h-9 rounded-xl mx-auto mb-2 flex items-center justify-center', stat.bg)}>
                     <StatIcon className={cn('w-4 h-4', stat.color)} />
                   </div>
-                  <p className="text-xl font-bold text-[color:var(--text-primary)]">{stat.value}</p>
-                  <p className="text-xs text-[color:var(--text-tertiary)] mt-0.5">{stat.label}</p>
-                </div>
+                  <p className="text-xl font-mono font-bold text-[#e8f7ff]">{stat.value}</p>
+                  <p className="text-[10px] font-mono text-[#8ab6d6]/60 uppercase mt-0.5">{stat.label}</p>
+                </HudCard>
               )
             })}
           </motion.div>
 
           {/* Today's tasks */}
-          <motion.div variants={fadeUp} className="card">
-            <div className="section-header">
-              <div>
-                <h3 className="section-title">Today's Tasks</h3>
-                <p className="section-subtitle">{tasks.filter(t => t.status !== 'DONE').length} remaining</p>
+          <motion.div variants={fadeUp}>
+            <HudCard
+              title="TODAY'S TASKS"
+              subtitle={`${tasks.filter(t => t.status !== 'DONE').length} REMAINING`}
+              headerExtra={
+                <button
+                  onClick={() => navigate('/tasks')}
+                  className="btn-ghost text-[10px] font-mono flex items-center gap-1 text-[#00cfff]/80 hover:text-[#00cfff]"
+                >
+                  View all <ArrowRight className="w-3 h-3" />
+                </button>
+              }
+            >
+              <div className="space-y-2">
+                {tasks.slice(0, 4).map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-[#00cfff]/5 hover:border-[#00cfff]/20 transition-all cursor-pointer group"
+                    onClick={() => toggleTask(task.id)}
+                  >
+                    <button className="flex-shrink-0 text-[#8ab6d6]/55 hover:text-[#00cfff] transition-colors">
+                      {task.status === 'DONE' ? (
+                        <CheckCircle2 className="w-4 h-4 text-[#00cfff]" />
+                      ) : (
+                        <Circle className="w-4 h-4" />
+                      )}
+                    </button>
+                    <span className={cn(
+                      'flex-1 text-sm truncate font-sans',
+                      task.status === 'DONE'
+                        ? 'line-through text-[#8ab6d6]/50'
+                        : 'text-[#e8f7ff]'
+                    )}>
+                      {task.title}
+                    </span>
+                    <span className={cn(
+                      'badge text-[10px] font-mono',
+                      task.priority === 'HIGH' || task.priority === 'URGENT' ? 'badge-error' :
+                      task.priority === 'MEDIUM' ? 'badge-warning' : 'badge-success'
+                    )}>
+                      {task.priority}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}
+                      className="p-1.5 rounded-lg hover:bg-rose-500/20 text-[#8ab6d6]/50 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                      title="Delete Task"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {tasks.length === 0 && (
+                  <p className="text-xs text-[#8ab6d6]/40 text-center py-4 font-mono">NO ACTIVE TASKS DETECTED.</p>
+                )}
               </div>
+
               <button
                 onClick={() => navigate('/tasks')}
-                className="btn-ghost text-xs flex items-center gap-1"
+                className="w-full mt-3 py-2.5 rounded-xl border border-dashed border-[#00cfff]/20 text-xs font-mono uppercase text-[#8ab6d6]/70 hover:text-[#00cfff] hover:border-[#00cfff]/40 hover:bg-[#00cfff]/5 transition-all flex items-center justify-center gap-2"
               >
-                View all <ArrowRight className="w-3 h-3" />
+                + ADD NEW DIRECTIVE
               </button>
-            </div>
-
-            <div className="space-y-2">
-              {tasks.slice(0, 5).map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer group"
-                  onClick={() => toggleTask(task.id)}
-                >
-                  <button className="flex-shrink-0 text-[color:var(--text-tertiary)] hover:text-success-400 transition-colors">
-                    {task.status === 'DONE'
-                      ? <CheckCircle2 className="w-4 h-4 text-success-400" />
-                      : <Circle className="w-4 h-4" />
-                    }
-                  </button>
-                  <span className={cn(
-                    'flex-1 text-sm truncate',
-                    task.status === 'DONE'
-                      ? 'line-through text-[color:var(--text-tertiary)]'
-                      : 'text-[color:var(--text-primary)]'
-                  )}>
-                    {task.title}
-                  </span>
-                  <span className={cn(
-                    'badge text-[10px]',
-                    task.priority === 'HIGH' || task.priority === 'URGENT' ? 'badge-error' :
-                    task.priority === 'MEDIUM' ? 'badge-warning' : 'badge-success'
-                  )}>
-                    {task.priority}
-                  </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}
-                    className="p-1.5 rounded-lg hover:bg-rose-500/20 text-[color:var(--text-tertiary)] hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
-                    title="Delete Task"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-              {tasks.length === 0 && (
-                <p className="text-xs text-[color:var(--text-muted)] text-center py-4">No tasks for today. Add one below!</p>
-              )}
-            </div>
-
-            <button
-              onClick={() => navigate('/tasks')}
-              className="w-full mt-3 py-2.5 rounded-xl border border-dashed border-[color:var(--border-default)] text-sm text-[color:var(--text-tertiary)] hover:text-[color:var(--text-secondary)] hover:border-primary-500/30 hover:bg-primary-500/5 transition-all flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add task
-            </button>
+            </HudCard>
           </motion.div>
 
           {/* Habits today */}
-          <motion.div variants={fadeUp} className="card">
-            <div className="section-header">
-              <div>
-                <h3 className="section-title">Habits</h3>
-                <p className="section-subtitle">{completedHabits} of {MOCK_HABITS.length} done</p>
-              </div>
-              <button onClick={() => navigate('/habits')} className="btn-ghost text-xs flex items-center gap-1">
-                View all <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {MOCK_HABITS.map((habit) => (
-                <button
-                  key={habit.id}
-                  className={cn(
-                    'flex items-center gap-2.5 p-3 rounded-xl border transition-all duration-200',
-                    habit.completed
-                      ? 'bg-success-500/10 border-success-500/20'
-                      : 'bg-white/[0.02] border-[color:var(--border-subtle)] hover:bg-white/[0.05]'
-                  )}
-                >
-                  <span className="text-lg">{habit.icon}</span>
-                  <div className="text-left min-w-0">
-                    <p className={cn(
-                      'text-xs font-medium truncate',
-                      habit.completed ? 'text-success-400' : 'text-[color:var(--text-primary)]'
-                    )}>
-                      {habit.title}
-                    </p>
-                    <p className="text-[10px] text-[color:var(--text-tertiary)] flex items-center gap-1">
-                      <Flame className="w-2.5 h-2.5 text-orange-400" />
-                      {habit.streak}d streak
-                    </p>
-                  </div>
+          <motion.div variants={fadeUp}>
+            <HudCard
+              title="HABIT TRACKER"
+              subtitle={`${completedHabits} OF ${MOCK_HABITS.length} DONE`}
+              headerExtra={
+                <button onClick={() => navigate('/habits')} className="btn-ghost text-[10px] font-mono flex items-center gap-1 text-[#00cfff]/80 hover:text-[#00cfff]">
+                  View all <ArrowRight className="w-3 h-3" />
                 </button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* GitHub Live Monitor */}
-          <motion.div variants={fadeUp} className="card">
-            <div className="section-header">
-              <div>
-                <h3 className="section-title">GitHub Monitor</h3>
-                <p className="section-subtitle">Live development activity for @{githubUsername}</p>
-              </div>
-              <button onClick={() => navigate('/projects')} className="btn-ghost text-xs flex items-center gap-1">
-                All Repos <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            {gitLoading ? (
-              <div className="animate-pulse space-y-3 py-2">
-                <div className="h-4 bg-white/5 rounded w-1/3" />
-                <div className="h-10 bg-white/5 rounded w-full" />
-                <div className="h-10 bg-white/5 rounded w-full" />
-              </div>
-            ) : gitRepos.length === 0 ? (
-              <p className="text-xs text-[color:var(--text-muted)] text-center py-4">No GitHub repositories found.</p>
-            ) : (
-              <div className="space-y-3">
-                {/* Most Active Repository Card */}
-                {latestRepo && (
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase font-semibold text-primary-400">Latest Push</p>
-                      <h4 className="text-xs font-bold text-white truncate mt-0.5">{latestRepo.name}</h4>
-                      <p className="text-xs text-[color:var(--text-secondary)] truncate mt-1">
-                        {latestRepo.latestCommit?.commit.message || latestRepo.description || 'No commit message'}
+              }
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {MOCK_HABITS.map((habit) => (
+                  <div
+                    key={habit.id}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-xl border transition-all duration-200',
+                      habit.completed
+                        ? 'bg-[#00cfff]/5 border-[#00cfff]/20'
+                        : 'bg-white/[0.01] border-[#00cfff]/5 hover:bg-white/[0.03]'
+                    )}
+                  >
+                    <span className="text-lg">{habit.icon}</span>
+                    <div className="text-left min-w-0 flex-1">
+                      <p className={cn(
+                        'text-xs font-bold truncate font-sans',
+                        habit.completed ? 'text-[#00cfff]' : 'text-[#e8f7ff]'
+                      )}>
+                        {habit.title}
                       </p>
-                      <p className="text-[9px] text-[color:var(--text-tertiary)] mt-1.5 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-indigo-400" />
-                        {daysSinceCommit === 0 ? 'Today' : daysSinceCommit === 1 ? 'Yesterday' : `${daysSinceCommit} days ago`}
+                      <p className="text-[10px] text-[#8ab6d6]/50 flex items-center gap-1 font-mono uppercase">
+                        <Flame className="w-2.5 h-2.5 text-orange-400" />
+                        {habit.streak}d STREAK
                       </p>
                     </div>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
-                      {latestRepo.activityStatus}
-                    </span>
-                  </div>
-                )}
-
-                {/* Attention Needed Repos */}
-                {gitRepos.filter(r => r.open_issues_count > 0).slice(0, 1).map(repo => (
-                  <div key={repo.id} className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/10 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase font-semibold text-rose-400">Needs Attention</p>
-                      <h4 className="text-xs font-bold text-white truncate mt-0.5">{repo.name}</h4>
-                      <p className="text-[10px] text-rose-300 mt-1">
-                        {repo.open_issues_count} open issues require resolution.
-                      </p>
-                    </div>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 font-mono">
-                      Issues
-                    </span>
                   </div>
                 ))}
               </div>
-            )}
+            </HudCard>
+          </motion.div>
+
+          {/* GitHub Live Monitor */}
+          <motion.div variants={fadeUp}>
+            <HudCard
+              title="GITHUB ACTIVITY MONITOR"
+              subtitle={`LIVE ACTIVITY FOR @${githubUsername}`}
+              headerExtra={
+                <button onClick={() => navigate('/projects')} className="btn-ghost text-[10px] font-mono flex items-center gap-1 text-[#00cfff]/80 hover:text-[#00cfff]">
+                  Repos <ArrowRight className="w-3 h-3" />
+                </button>
+              }
+            >
+              {gitLoading ? (
+                <div className="animate-pulse space-y-3 py-2">
+                  <div className="h-4 bg-[#00cfff]/5 rounded w-1/3" />
+                  <div className="h-10 bg-[#00cfff]/5 rounded w-full" />
+                </div>
+              ) : gitRepos.length === 0 ? (
+                <p className="text-xs text-[#8ab6d6]/40 text-center py-4 font-mono">NO REPOSITORIES DETECTED.</p>
+              ) : (
+                <div className="space-y-3">
+                  {latestRepo && (
+                    <div className="p-3 rounded-xl bg-white/[0.01] border border-[#00cfff]/10 hover:border-[#00cfff]/25 transition-all flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[9px] uppercase font-semibold text-[#00cfff] font-mono tracking-widest">LATEST COMMITTED REPO</p>
+                        <h4 className="text-xs font-mono font-bold text-white truncate mt-0.5">{latestRepo.name}</h4>
+                        <p className="text-xs text-[#8ab6d6]/60 truncate mt-1">
+                          {latestRepo.latestCommit?.commit.message || latestRepo.description || 'No commit message'}
+                        </p>
+                        <p className="text-[9px] text-[#8ab6d6]/50 mt-1.5 flex items-center gap-1 font-mono">
+                          <Clock className="w-3 h-3 text-[#00cfff]" />
+                          {daysSinceCommit === 0 ? 'PUSHED TODAY' : daysSinceCommit === 1 ? 'PUSHED YESTERDAY' : `${daysSinceCommit} DAYS AGO`}
+                        </p>
+                      </div>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#00cfff]/10 text-[#00cfff] font-mono">
+                        {latestRepo.activityStatus}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </HudCard>
           </motion.div>
         </div>
       </motion.div>
@@ -420,42 +385,45 @@ export default function DashboardPage() {
       >
         {/* Upcoming events */}
         <motion.div variants={fadeUp} className="col-span-12 md:col-span-6">
-          <div className="card">
-            <div className="section-header">
-              <h3 className="section-title">Upcoming</h3>
-              <button onClick={() => navigate('/calendar')} className="btn-ghost text-xs flex items-center gap-1">
+          <HudCard
+            title="UPCOMING SCHEDULE"
+            subtitle={`${MOCK_EVENTS.length} EVENTS LOADED`}
+            headerExtra={
+              <button onClick={() => navigate('/calendar')} className="btn-ghost text-[10px] font-mono flex items-center gap-1 text-[#00cfff]/80 hover:text-[#00cfff]">
                 Calendar <ArrowRight className="w-3 h-3" />
               </button>
-            </div>
+            }
+          >
             <div className="space-y-2">
               {MOCK_EVENTS.map((event) => (
-                <div key={event.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-colors">
+                <div key={event.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] border border-[#00cfff]/5 transition-colors">
                   <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ background: event.color }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[color:var(--text-primary)] truncate">{event.title}</p>
-                    <p className="text-xs text-[color:var(--text-tertiary)] flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" />
+                    <p className="text-sm font-semibold text-[#e8f7ff] truncate">{event.title}</p>
+                    <p className="text-xs text-[#8ab6d6]/60 flex items-center gap-1 mt-0.5 font-mono">
+                      <Clock className="w-3 h-3 text-[#00cfff]" />
                       {format(new Date(event.start), 'h:mm a')}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </HudCard>
         </motion.div>
 
         {/* Daily quote */}
         <motion.div variants={fadeUp} className="col-span-12 md:col-span-6">
-          <div className="card h-full flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-3 right-4 text-6xl font-serif text-primary-500/10 select-none leading-none">"</div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[color:var(--text-muted)] mb-3">Daily Reflection</p>
-              <p className="text-base font-medium text-[color:var(--text-primary)] leading-relaxed relative z-10">
-                {DAILY_QUOTE.text}
-              </p>
+          <HudCard title="DAILY DIRECTIVE" subtitle="SYSTEM REFLECTION CODE">
+            <div className="h-full flex flex-col justify-between relative overflow-hidden min-h-[90px]">
+              <div className="absolute -top-3 -right-2 text-6xl font-serif text-[#00cfff]/10 select-none leading-none">"</div>
+              <div>
+                <p className="text-sm italic text-[#e8f7ff] leading-relaxed relative z-10 font-sans">
+                  "{DAILY_QUOTE.text}"
+                </p>
+              </div>
+              <p className="text-xs text-[#8ab6d6]/50 mt-4 font-mono">— {DAILY_QUOTE.author.toUpperCase()}</p>
             </div>
-            <p className="text-xs text-[color:var(--text-tertiary)] mt-4">— {DAILY_QUOTE.author}</p>
-          </div>
+          </HudCard>
         </motion.div>
       </motion.div>
     </div>

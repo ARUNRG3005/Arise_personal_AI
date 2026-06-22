@@ -9,6 +9,8 @@ import { useChatStore } from '@/stores/chatStore'
 import type { ChatMessage, Conversation } from '@/types'
 import { SUGGESTED_PROMPTS } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
+import AriseOrb from '@/components/shared/AriseOrb'
+import HudCard from '@/components/shared/HudCard'
 
 export type Message = ChatMessage & {
   timestamp?: Date
@@ -79,7 +81,9 @@ export default function ChatPage() {
     }
 
     // Add user message locally
-    setMessages([...useChatStore.getState().messages, userMsg])
+    const currentMessages = useChatStore.getState().messages
+    const nextMessages = [...currentMessages, userMsg]
+    setMessages(nextMessages)
     setIsTyping(true)
 
     const assistantMsgId = generateId()
@@ -94,7 +98,7 @@ export default function ChatPage() {
     }
 
     // Add placeholder assistant message
-    setMessages([...useChatStore.getState().messages, userMsg, streamingMsg])
+    setMessages([...nextMessages, streamingMsg])
 
     try {
       // Build history context from current conversation messages
@@ -125,6 +129,7 @@ export default function ChatPage() {
       if (!reader) throw new Error('No readable stream available')
 
       let accumulatedContent = ''
+      let accumulatedSources: any[] | null = null
       let isDone = false
       let activeId = activeConversationId
 
@@ -169,6 +174,10 @@ export default function ChatPage() {
                 accumulatedContent = data.content
               }
 
+              if (data.sources) {
+                accumulatedSources = data.sources
+              }
+
               const runningTools = (data.toolCalls || []).map((tc: any) => `${tc.name} (${tc.status})`)
 
               // Update assistant message content in store
@@ -178,7 +187,8 @@ export default function ChatPage() {
                     ...m,
                     content: accumulatedContent,
                     tools: runningTools,
-                    isStreaming: !isDone
+                    isStreaming: !isDone,
+                    metadata: accumulatedSources ? { sources: accumulatedSources } : m.metadata
                   } : m
                 )
               )
@@ -223,7 +233,7 @@ export default function ChatPage() {
     }
   }, [activeConversationId, isTyping, navigate, addConversation, setMessages, fetchConversations])
 
-  const { state: voiceState, startListening, stopListening, interrupt, speakResponse } = useVoiceAssistant({
+  const { state: voiceState, startListening, stopListening, interrupt, speakResponse, startWakeWord, stopWakeWord } = useVoiceAssistant({
     onSend: (text) => {
       handleSend(text)
       setInputValue('')
@@ -232,6 +242,14 @@ export default function ChatPage() {
       setInputValue(text)
     }
   })
+
+  // Start wake word loop on mount
+  useEffect(() => {
+    startWakeWord()
+    return () => {
+      stopWakeWord()
+    }
+  }, [startWakeWord, stopWakeWord])
 
   useEffect(() => {
     voiceStateRef.current = voiceState
@@ -282,19 +300,17 @@ export default function ChatPage() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="flex flex-col items-center gap-4 mb-10"
+                className="flex flex-col items-center gap-6 mb-10"
               >
-                <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow-primary">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
+                <AriseOrb size="lg" interactive onClick={toggleVoice} />
                 <div className="text-center">
-                  <h2 className="text-xl font-bold text-[color:var(--text-primary)]">How can I help you?</h2>
-                  <p className="text-sm text-[color:var(--text-tertiary)] mt-1">Your personal AI is ready — ask me anything.</p>
+                  <h2 className="text-xl font-mono font-bold text-[#e8f7ff] uppercase tracking-wider">How can I help you?</h2>
+                  <p className="text-xs font-mono text-[#8ab6d6]/60 mt-1 uppercase tracking-widest">SYSTEM_STATE: READY // STANDBY_WAKE_LOOP</p>
                 </div>
               </motion.div>
 
               {/* Suggested prompts */}
-              <div className="grid grid-cols-2 gap-2.5 w-full max-w-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
                 {SUGGESTED_PROMPTS.map((prompt, i) => (
                   <motion.button
                     key={prompt.text}
@@ -302,10 +318,14 @@ export default function ChatPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 + i * 0.05 }}
                     onClick={() => handleSend(prompt.text)}
-                    className="flex items-center gap-3 p-3.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--bg-surface)] hover:bg-white/[0.05] hover:border-primary-500/30 transition-all text-left group"
+                    className="relative flex items-center gap-3 p-3.5 rounded-xl border border-[#00cfff]/20 bg-[#041428]/40 hover:bg-[#00cfff]/5 hover:border-[#00cfff]/50 transition-all text-left group overflow-hidden cursor-pointer"
                   >
+                    {/* Small HUD corner decorations */}
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#00cfff]/30 opacity-40 group-hover:opacity-100 group-hover:border-[#00cfff] transition-all" />
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#00cfff]/30 opacity-40 group-hover:opacity-100 group-hover:border-[#00cfff] transition-all" />
+                    
                     <span className="text-xl flex-shrink-0">{prompt.icon}</span>
-                    <span className="text-sm text-[color:var(--text-secondary)] group-hover:text-[color:var(--text-primary)] transition-colors">
+                    <span className="text-sm font-sans text-[#8ab6d6] group-hover:text-[#00cfff] transition-colors leading-snug">
                       {prompt.text}
                     </span>
                   </motion.button>
@@ -334,6 +354,36 @@ export default function ChatPage() {
           onVoiceInterrupt={interrupt}
         />
       </div>
+
+      {/* Floating JARVIS Voice Indicator Pill */}
+      {voiceState !== 'idle' && (
+        <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#041428]/80 border border-[#00cfff]/30 backdrop-blur-md text-xs font-mono select-none shadow-glow-sm">
+          {voiceState === 'wake' && (
+            <div className="flex items-center gap-2 text-[#00cfff]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00cfff] animate-pulse" />
+              <span>ARISE ONLINE</span>
+            </div>
+          )}
+          {voiceState === 'listening' && (
+            <div className="flex items-center gap-2 text-cyan-400 font-bold">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>LISTENING</span>
+            </div>
+          )}
+          {voiceState === 'processing' && (
+            <div className="flex items-center gap-2 text-amber-400">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border-t-2 border-transparent animate-spin" />
+              <span>PROCESSING</span>
+            </div>
+          )}
+          {voiceState === 'speaking' && (
+            <div className="flex items-center gap-2 text-[#00cfff]">
+              <span className="w-2 h-2 bg-[#00cfff] rounded-full animate-bounce" />
+              <span>SPEAKING</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -64,31 +64,12 @@ export class SpeechSynthesisService {
     const voices = window.speechSynthesis.getVoices();
     if (voices.length === 0) return null;
 
-    // Preferred voice identifiers (case-insensitive search)
-    const preferredVoices = [
-      'google us english',
-      'natural',
-      'samantha',
-      'microsoft zira',
-      'microsoft david',
-      'en-us',
-      'en-gb'
-    ];
+    const preferred = voices.find(v => v.name === 'Google UK English Male')
+      || voices.find(v => v.lang.toLowerCase().startsWith('en') && v.name.toLowerCase().includes('male'))
+      || voices.find(v => v.lang.toLowerCase().startsWith('en'))
+      || voices[0];
 
-    for (const namePattern of preferredVoices) {
-      const match = voices.find(voice => 
-        voice.name.toLowerCase().includes(namePattern) || 
-        voice.lang.toLowerCase().includes(namePattern)
-      );
-      if (match) return match;
-    }
-
-    // Fallback to first English voice
-    const englishVoice = voices.find(voice => voice.lang.toLowerCase().startsWith('en'));
-    if (englishVoice) return englishVoice;
-
-    // Ultimate fallback
-    return voices[0];
+    return preferred;
   }
 
   public speak(text: string, callbacks?: SpeechSynthesisCallbacks) {
@@ -116,9 +97,9 @@ export class SpeechSynthesisService {
         utterance.voice = voice;
       }
 
-      // Voice settings
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
+      // Voice settings (JARVIS edition)
+      utterance.rate = 0.92;
+      utterance.pitch = 0.85;
       utterance.volume = 1.0;
 
       utterance.onstart = () => {

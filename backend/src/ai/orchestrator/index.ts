@@ -4,6 +4,7 @@ import { TaskAgent } from '../agents/TaskAgent';
 import { CalendarAgent } from '../agents/CalendarAgent';
 import { MemoryAgent } from '../agents/MemoryAgent';
 import { GitHubAgent } from '../agents/GitHubAgent';
+import { SearchAgent } from '../agents/SearchAgent';
 import { BaseAgent } from '../agents/BaseAgent';
 import { logger } from '../../config/logger';
 import { prisma } from '../../config/database';
@@ -12,6 +13,7 @@ import { ARISE_PERSONALITY } from '../personality/systemPrompt';
 export interface OrchestratorResult {
   content: string;
   toolCalls: any[];
+  sources?: any[];
 }
 
 export class AIOrchestrator {
@@ -22,6 +24,7 @@ export class AIOrchestrator {
     this.registerAgent(new CalendarAgent());
     this.registerAgent(new MemoryAgent());
     this.registerAgent(new GitHubAgent());
+    this.registerAgent(new SearchAgent());
   }
 
   registerAgent(agent: BaseAgent) {
@@ -76,6 +79,7 @@ export class AIOrchestrator {
     let loopCount = 0;
     const maxLoops = 3; // Prevent infinite tool execution loops
     let activeToolCalls: any[] = [];
+    const accumulatedSources: any[] = [];
 
     while (loopCount < maxLoops) {
       loopCount++;
@@ -107,6 +111,7 @@ export class AIOrchestrator {
           yield {
             content: streamedResponseText,
             toolCalls: [{ name: toolToCall.name, status: 'running' }],
+            sources: accumulatedSources.length > 0 ? accumulatedSources : undefined,
           };
         }
 
@@ -116,6 +121,7 @@ export class AIOrchestrator {
           yield {
             content: streamedResponseText,
             toolCalls: activeToolCalls,
+            sources: accumulatedSources.length > 0 ? accumulatedSources : undefined,
           };
         }
       }
@@ -140,6 +146,7 @@ export class AIOrchestrator {
       yield {
         content: streamedResponseText,
         toolCalls: activeToolCalls,
+        sources: accumulatedSources.length > 0 ? accumulatedSources : undefined,
       };
 
       // Execute tool
@@ -147,6 +154,11 @@ export class AIOrchestrator {
       try {
         toolResult = await this.executeTool(toolToCall.name, parsedArgs, userId);
         activeToolCalls = [{ name: toolToCall.name, status: 'done' }];
+
+        // Accumulate sources if tool was searchWeb
+        if (toolToCall.name === 'searchWeb' && toolResult.success && Array.isArray(toolResult.data)) {
+          accumulatedSources.push(...toolResult.data);
+        }
       } catch (err: any) {
         logger.error(`Error executing tool ${toolToCall.name}:`, err);
         toolResult = { success: false, error: err.message || 'Tool execution failed.' };
@@ -156,6 +168,7 @@ export class AIOrchestrator {
       yield {
         content: streamedResponseText,
         toolCalls: activeToolCalls,
+        sources: accumulatedSources.length > 0 ? accumulatedSources : undefined,
       };
 
       // Push the tool invocation and response into the conversation history context

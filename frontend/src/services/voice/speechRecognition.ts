@@ -24,7 +24,7 @@ export class SpeechRecognitionService {
     this.recognition = new SpeechRecognition();
     this.recognition.continuous = false; // Stop after a pause in speech
     this.recognition.interimResults = true;
-    this.recognition.lang = 'en-US';
+    this.recognition.lang = 'en-IN';
 
     this.recognition.onstart = () => {
       this.isListening = true;

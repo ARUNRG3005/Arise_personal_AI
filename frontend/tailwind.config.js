@@ -81,6 +81,13 @@ export default {
           600: '#1e2d3d',
           500: '#243447',
         },
+        // JARVIS Edition Cyber Colors
+        jarvis: {
+          bg: '#020d18',
+          surface: '#041428',
+          accent: '#00cfff',
+          'accent-glow': 'rgba(0, 207, 255, 0.35)',
+        },
         // Glass surfaces
         glass: {
           DEFAULT: 'rgba(255, 255, 255, 0.05)',
@@ -107,6 +114,8 @@ export default {
         'glow-accent': '0 0 20px rgba(6, 182, 212, 0.3)',
         'glow-success': '0 0 20px rgba(16, 185, 129, 0.3)',
         'glow-sm': '0 0 10px rgba(99, 102, 241, 0.2)',
+        'glow-accent-cyan': '0 0 20px rgba(0, 207, 255, 0.35)',
+        'glow-lg': '0 0 35px rgba(0, 207, 255, 0.4)',
         'glass': '0 8px 32px rgba(0, 0, 0, 0.3)',
         'glass-lg': '0 16px 64px rgba(0, 0, 0, 0.4)',
         'card': '0 4px 16px rgba(0, 0, 0, 0.2)',
@@ -128,6 +137,10 @@ export default {
         'typing': 'typing 1.2s steps(3) infinite',
         'spin-slow': 'spin 3s linear infinite',
         'bounce-subtle': 'bounceSubtle 2s ease-in-out infinite',
+        'scan': 'scan 8s linear infinite',
+        'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+        'rotate-left': 'rotateLeft 12s linear infinite',
+        'rotate-right': 'rotateRight 8s linear infinite',
       },
       keyframes: {
         float: {
@@ -166,6 +179,23 @@ export default {
         bounceSubtle: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-3px)' },
+        },
+        scan: {
+          '0%': { top: '0%' },
+          '50%': { top: '100%' },
+          '100%': { top: '0%' },
+        },
+        glowPulse: {
+          '0%, 100%': { boxShadow: '0 0 15px rgba(0, 207, 255, 0.2)', opacity: '0.8' },
+          '50%': { boxShadow: '0 0 25px rgba(0, 207, 255, 0.6)', opacity: '1' },
+        },
+        rotateLeft: {
+          from: { transform: 'rotate(360deg)' },
+          to: { transform: 'rotate(0deg)' },
+        },
+        rotateRight: {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
         },
       },
       transitionTimingFunction: {

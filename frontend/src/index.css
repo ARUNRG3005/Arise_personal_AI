@@ -8,26 +8,26 @@
    ============================================================ */
 @layer base {
   :root {
-    /* Dark mode (default) */
-    --bg-base: #030712;
-    --bg-surface: #0a0f1e;
-    --bg-elevated: #111827;
-    --bg-overlay: #1a2332;
+    /* Dark mode (default JARVIS Edition) */
+    --bg-base: #020d18;
+    --bg-surface: #041428;
+    --bg-elevated: #081d38;
+    --bg-overlay: #0c274b;
 
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-default: rgba(255, 255, 255, 0.1);
-    --border-strong: rgba(255, 255, 255, 0.18);
+    --border-subtle: rgba(0, 207, 255, 0.08);
+    --border-default: rgba(0, 207, 255, 0.15);
+    --border-strong: rgba(0, 207, 255, 0.35);
 
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --text-tertiary: #6b7280;
-    --text-muted: #374151;
+    --text-primary: #e8f7ff;
+    --text-secondary: #8ab6d6;
+    --text-tertiary: #507b9f;
+    --text-muted: #274765;
 
-    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card: rgba(0, 207, 255, 0.03);
 
-    --glass-bg: rgba(255, 255, 255, 0.04);
-    --glass-bg-hover: rgba(255, 255, 255, 0.07);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(4, 20, 40, 0.6);
+    --glass-bg-hover: rgba(0, 207, 255, 0.08);
+    --glass-border: rgba(0, 207, 255, 0.2);
 
     --sidebar-width: 260px;
     --topbar-height: 64px;
@@ -88,16 +88,16 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(0, 207, 255, 0.3);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.6);
+    background: rgba(0, 207, 255, 0.6);
   }
 
   /* Selection */
   ::selection {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(0, 207, 255, 0.3);
     color: white;
   }
 }
@@ -189,10 +189,10 @@
            hover:bg-[color:var(--glass-bg-hover)];
   }
   .nav-item.active {
-    @apply text-white bg-primary-600/20 border border-primary-500/30;
+    @apply text-white bg-[#00cfff]/15 border border-[#00cfff]/30 shadow-[0_0_15px_rgba(0,207,255,0.2)];
   }
   .nav-item.active .nav-icon {
-    @apply text-primary-400;
+    @apply text-[#00cfff];
   }
 
   /* Card */
@@ -209,9 +209,9 @@
 
   /* Button variants */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-500 text-white font-medium px-4 py-2
+    @apply bg-[#00cfff] hover:bg-[#00e1ff] text-[#020d18] font-bold px-4 py-2
            rounded-xl transition-all duration-200 active:scale-95
-           shadow-glow-primary hover:shadow-glow-primary;
+           shadow-[0_0_15px_rgba(0,207,255,0.35)] hover:shadow-[0_0_25px_rgba(0,207,255,0.55)];
   }
   .btn-secondary {
     background: var(--glass-bg);
@@ -240,7 +240,7 @@
     @apply w-full px-4 py-3 rounded-xl text-[color:var(--text-primary)]
            placeholder-[color:var(--text-tertiary)] outline-none
            border border-[color:var(--border-default)]
-           focus:border-primary-500/60 focus:ring-2 focus:ring-primary-500/20
+           focus:border-[#00cfff]/60 focus:ring-2 focus:ring-[#00cfff]/20
            transition-all duration-200 text-sm;
   }
 
