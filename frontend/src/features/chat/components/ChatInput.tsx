@@ -102,7 +102,7 @@ export default function ChatInput({
   }
 
   return (
-    <div className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-base)]/80 backdrop-blur-xl p-4">
+    <div className="j-chat-input-wrap">
       {/* Quick chips */}
       <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-hide pb-1">
         {QUICK_CHIPS.map(chip => (
@@ -128,7 +128,7 @@ export default function ChatInput({
       )}>
         {/* Attach */}
         <button
-          className="p-1.5 rounded-lg hover:bg-white/10 text-[color:var(--text-tertiary)] hover:text-[color:var(--text-secondary)] transition-colors flex-shrink-0"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[color:var(--text-tertiary)] hover:text-[color:var(--text-secondary)] transition-colors flex-shrink-0"
           title="Attach file"
           disabled={isDisabled || voiceState === 'listening'}
         >
@@ -151,7 +151,7 @@ export default function ChatInput({
               ? 'ARISE is speaking... Type to interrupt.'
               : 'Message ARISE… (Shift+Enter for new line)'
           }
-          className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none resize-none leading-relaxed"
+          className="flex-1 bg-transparent text-base text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none resize-none leading-relaxed min-h-[44px]"
           style={{ maxHeight: '200px' }}
         />
 
@@ -178,7 +178,7 @@ export default function ChatInput({
         <button
           onClick={onVoiceToggle}
           className={cn(
-            "p-1.5 rounded-lg transition-all flex-shrink-0 relative",
+            "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all flex-shrink-0 relative",
             voiceState === 'idle' && "hover:bg-white/10 text-[color:var(--text-tertiary)] hover:text-[color:var(--text-secondary)]",
             voiceState === 'listening' && "bg-error-500/20 text-error-400 shadow-[0_0_8px_rgba(239,68,68,0.3)] animate-pulse",
             voiceState === 'processing' && "text-primary-400 cursor-not-allowed",

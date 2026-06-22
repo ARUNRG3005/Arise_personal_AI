@@ -5,6 +5,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import PageLoader from '@/components/shared/PageLoader'
 import CommandPalette from '@/components/layout/CommandPalette'
 import BriefingToast from '@/components/layout/BriefingToast'
+import PwaInstallPrompt from '@/components/shared/PwaInstallPrompt'
 import { useUIStore } from '@/stores/uiStore'
 import { getSocket } from '@/lib/socket'
 
@@ -67,6 +68,9 @@ export default function App() {
 
       {/* Morning Briefing Toast Overlay */}
       <BriefingToast />
+
+      {/* PWA Install Prompt Banner */}
+      <PwaInstallPrompt />
 
       {/* Toast notifications */}
       <Toaster

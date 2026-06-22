@@ -8,97 +8,118 @@
    ============================================================ */
 @layer base {
   :root {
-    /* Dark mode (default JARVIS Edition) */
-    --bg-base: #020d18;
-    --bg-surface: #041428;
-    --bg-elevated: #081d38;
-    --bg-overlay: #0c274b;
+    /* === JARVIS CORE COLORS === */
+    --j-void:          #000811;   /* Deepest background — almost black with blue hint */
+    --j-bg:            #010f1e;   /* Primary background */
+    --j-surface:       #021628;   /* Cards, panels */
+    --j-elevated:      #032038;   /* Modals, dropdowns, hover states */
+    --j-overlay:       #042a4a;   /* Tooltips, active overlays */
 
-    --border-subtle: rgba(0, 207, 255, 0.08);
-    --border-default: rgba(0, 207, 255, 0.15);
-    --border-strong: rgba(0, 207, 255, 0.35);
+    /* === JARVIS CYAN — Primary Accent === */
+    --j-cyan:          #00d4ff;   /* Pure JARVIS cyan */
+    --j-cyan-bright:   #40e8ff;   /* Highlighted / focused */
+    --j-cyan-dim:      #0099cc;   /* Inactive elements */
+    --j-cyan-ghost:    rgba(0,212,255,0.08);   /* Subtle fills */
+    --j-cyan-border:   rgba(0,212,255,0.20);   /* Default borders */
+    --j-cyan-active:   rgba(0,212,255,0.35);   /* Active/hover borders */
+    --j-cyan-glow-sm:  0 0 8px rgba(0,212,255,0.4);
+    --j-cyan-glow-md:  0 0 20px rgba(0,212,255,0.3), 0 0 40px rgba(0,212,255,0.1);
+    --j-cyan-glow-lg:  0 0 40px rgba(0,212,255,0.4), 0 0 80px rgba(0,212,255,0.15);
 
-    --text-primary: #e8f7ff;
-    --text-secondary: #8ab6d6;
-    --text-tertiary: #507b9f;
-    --text-muted: #274765;
+    /* === JARVIS BLUE — Secondary === */
+    --j-blue:          #1a6fff;   /* Arc reactor blue */
+    --j-blue-dim:      rgba(26,111,255,0.3);
+    --j-blue-glow:     0 0 20px rgba(26,111,255,0.4);
 
-    --bg-card: rgba(0, 207, 255, 0.03);
+    /* === TEXT === */
+    --j-text:          #c8eeff;   /* Primary text — cool white with blue tint */
+    --j-text-sub:      rgba(0,212,255,0.65);   /* Secondary text */
+    --j-text-muted:    rgba(0,212,255,0.35);   /* Muted/tertiary */
+    --j-text-dim:      rgba(0,212,255,0.18);   /* Very dim labels */
 
-    --glass-bg: rgba(4, 20, 40, 0.6);
-    --glass-bg-hover: rgba(0, 207, 255, 0.08);
-    --glass-border: rgba(0, 207, 255, 0.2);
+    /* === STATUS COLORS === */
+    --j-green:         #00ff9d;   /* Online / success */
+    --j-amber:         #ffb300;   /* Warning / processing */
+    --j-red:           #ff3355;   /* Error / danger */
+    --j-purple:        #9d4edd;   /* Special / memory */
 
-    --sidebar-width: 260px;
-    --topbar-height: 64px;
-    --radius: 0.75rem;
+    /* === GLASS EFFECT === */
+    --j-glass:         rgba(2,22,40,0.85);
+    --j-glass-blur:    blur(12px);
+    --j-glass-border:  1px solid rgba(0,212,255,0.15);
+
+    /* === MAP OLD VARIABLES FOR BACKWARD COMPATIBILITY === */
+    --bg-base:         var(--j-bg);
+    --bg-surface:      var(--j-surface);
+    --bg-elevated:     var(--j-elevated);
+    --bg-overlay:      var(--j-overlay);
+
+    --border-subtle:   rgba(0, 212, 255, 0.08);
+    --border-default:  var(--j-cyan-border);
+    --border-strong:   var(--j-cyan-active);
+
+    --text-primary:    var(--j-text);
+    --text-secondary:  var(--j-text-sub);
+    --text-tertiary:   var(--j-text-muted);
+    --text-muted:      var(--j-text-dim);
+
+    --bg-card:         var(--j-cyan-ghost);
+
+    --glass-bg:        var(--j-glass);
+    --glass-border:    rgba(0, 212, 255, 0.15);
+
+    --sidebar-width:   260px;
+    --topbar-height:   64px;
+    --radius:          0.75rem;
 
     color-scheme: dark;
   }
 
   .light {
-    --bg-base: #f8fafc;
-    --bg-surface: #ffffff;
-    --bg-elevated: #f1f5f9;
-    --bg-overlay: #e2e8f0;
-
-    --border-subtle: rgba(0, 0, 0, 0.04);
-    --border-default: rgba(0, 0, 0, 0.08);
-    --border-strong: rgba(0, 0, 0, 0.14);
-
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-tertiary: #94a3b8;
-    --text-muted: #cbd5e1;
-
-    --bg-card: rgba(0, 0, 0, 0.02);
-
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-bg-hover: rgba(255, 255, 255, 0.9);
-    --glass-border: rgba(0, 0, 0, 0.06);
-
-    color-scheme: light;
+    color-scheme: dark; /* Force dark mode for JARVIS edition */
   }
 
-  * {
-    border-color: var(--border-default);
+  *, *::before, *::after {
     box-sizing: border-box;
   }
 
   html {
-    scroll-behavior: smooth;
+    background: var(--j-void);
+    color: var(--j-text);
+    font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
 
   body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+    background: var(--j-bg);
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
   }
 
-  /* Scrollbar */
+  /* Scrollbar — JARVIS style */
   ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--j-surface);
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(0, 207, 255, 0.3);
-    border-radius: 9999px;
+    background: var(--j-cyan-dim);
+    border-radius: 2px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 207, 255, 0.6);
+    background: var(--j-cyan);
   }
 
   /* Selection */
   ::selection {
-    background: rgba(0, 207, 255, 0.3);
-    color: white;
+    background: rgba(0, 212, 255, 0.25);
+    color: var(--j-cyan-bright);
   }
 }
 
@@ -458,3 +479,204 @@
   -webkit-backdrop-filter: blur(40px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* ============================================================
+   JARVIS Cyber HUD & Theme Extension
+   ============================================================ */
+
+/* === HEXAGONAL GRID BACKGROUND === */
+.j-hex-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52' viewBox='0 0 60 52'%3E%3Cpath d='M30 2 L56 16 L56 36 L30 50 L4 36 L4 16 Z' fill='none' stroke='rgba(0,212,255,0.04)' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size: 60px 52px;
+  opacity: 1;
+}
+
+/* === SCAN LINE === */
+.j-scan {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+}
+.j-scan::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(transparent, rgba(0,212,255,0.06), transparent);
+  animation: j-scanline 5s linear infinite;
+  top: -3px;
+}
+
+/* === CORNER ACCENTS === */
+.j-corner {
+  position: relative;
+}
+.j-corner::before,
+.j-corner::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: var(--j-cyan);
+  border-style: solid;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.j-corner::before {
+  top: -1px; left: -1px;
+  border-width: 1.5px 0 0 1.5px;
+}
+.j-corner::after {
+  bottom: -1px; right: -1px;
+  border-width: 0 1.5px 1.5px 0;
+}
+
+/* === ANIMATIONS === */
+@keyframes j-scanline {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes j-pulse-glow {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 1; }
+}
+@keyframes j-rotate-cw {
+  to { transform: rotate(360deg); }
+}
+@keyframes j-rotate-ccw {
+  to { transform: rotate(-360deg); }
+}
+@keyframes j-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+@keyframes j-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes j-flicker {
+  0%,96%,100% { opacity: 1; }
+  97%          { opacity: 0.85; }
+  98%          { opacity: 1; }
+  99%          { opacity: 0.9; }
+}
+@keyframes j-wave {
+  0%,100% { transform: scaleY(0.4); }
+  50%      { transform: scaleY(1.2); }
+}
+@keyframes j-ring-pulse {
+  0%,100% { transform: scale(1); opacity: 0.3; }
+  50%      { transform: scale(1.08); opacity: 0.7; }
+}
+
+/* === UTILITY CLASSES === */
+.j-text-glow   { text-shadow: var(--j-cyan-glow-sm); }
+.j-border-glow { box-shadow: var(--j-cyan-glow-sm); }
+.j-glow-md     { box-shadow: var(--j-cyan-glow-md); }
+.j-animate-fade-up { animation: j-fade-up 0.4s ease both; }
+.j-flicker     { animation: j-flicker 10s infinite; }
+.j-font-mono   { font-family: 'Courier New', Courier, monospace; }
+
+/* === HUD CARD BASE === */
+.j-card {
+  background: var(--j-surface);
+  border: 1px solid var(--j-cyan-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.j-card:hover {
+  border-color: var(--j-cyan-active);
+  box-shadow: var(--j-cyan-glow-sm);
+}
+
+/* === JARVIS BUTTON === */
+.j-btn {
+  background: var(--j-cyan-ghost);
+  border: 1px solid var(--j-cyan-active);
+  color: var(--j-cyan);
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 44px; /* Touch target */
+}
+.j-btn:hover {
+  background: rgba(0,212,255,0.14);
+  box-shadow: var(--j-cyan-glow-sm);
+}
+.j-btn:active { transform: scale(0.97); }
+
+/* === INPUT === */
+.j-input {
+  background: var(--j-surface);
+  border: 1px solid var(--j-cyan-border);
+  color: var(--j-text);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 15px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none; /* Remove iOS styling */
+  font-size: 16px; /* Prevent iOS zoom on focus */
+}
+.j-input:focus {
+  border-color: var(--j-cyan);
+  box-shadow: var(--j-cyan-glow-sm);
+}
+.j-input::placeholder { color: var(--j-text-dim); }
+
+/* Safe area support for notch phones */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+.safe-area-pt { padding-top: env(safe-area-inset-top); }
+
+/* Page wrapper — use this on every page's outermost div */
+.j-page {
+  padding: 16px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+@media (min-width: 768px) {
+  .j-page { padding: 24px 28px; }
+}
+
+/* Responsive grid for HUD cards */
+.j-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .j-grid-2 { gap: 14px; }
+}
+
+.j-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 1024px) {
+  .j-grid-4 { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+}
+
+/* Touch targets — minimum 44x44 for all interactive elements */
+button, a, [role="button"] { min-height: 44px; min-width: 44px; }
+
+/* Prevent text overflow on mobile */
+h1, h2, h3, p { word-break: break-word; overflow-wrap: break-word; }
+
+/* Chat input area — stays above mobile keyboard */
+.j-chat-input-wrap {
+  position: sticky;
+  bottom: 0;
+  background: var(--j-bg);
+  border-top: 1px solid var(--j-cyan-border);
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+

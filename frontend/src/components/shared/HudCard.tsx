@@ -1,48 +1,80 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion';
+import type { ReactNode } from 'react';
 
 interface HudCardProps {
-  children: React.ReactNode
-  title?: string
-  subtitle?: string
-  headerExtra?: React.ReactNode
-  className?: string
-  progress?: number // Optional progress bar (0-100)
+  label?: string;
+  title?: string; // Backward compatibility
+  value?: string | number;
+  sub?: string;
+  subtitle?: string; // Backward compatibility
+  progress?: number;
+  children?: ReactNode;
+  onClick?: () => void;
+  className?: string;
+  delay?: number;
+  accent?: 'cyan' | 'green' | 'amber' | 'red' | 'purple';
+  headerExtra?: ReactNode; // Backward compatibility
 }
 
-export default function HudCard({
-  children,
-  title,
-  subtitle,
-  headerExtra,
-  className = '',
-  progress,
+const ACCENT_COLORS = {
+  cyan:   'border-j-cyan/20 hover:border-j-cyan/45',
+  green:  'border-j-green/20 hover:border-j-green/45',
+  amber:  'border-j-amber/20 hover:border-j-amber/45',
+  red:    'border-j-red/20   hover:border-j-red/45',
+  purple: 'border-j-purple/20 hover:border-j-purple/45',
+};
+const ACCENT_TEXT = {
+  cyan:   'text-j-cyan',
+  green:  'text-j-green',
+  amber:  'text-j-amber',
+  red:    'text-j-red',
+  purple: 'text-j-purple',
+};
+const ACCENT_BAR = {
+  cyan:   'bg-j-cyan',
+  green:  'bg-j-green',
+  amber:  'bg-j-amber',
+  red:    'bg-j-red',
+  purple: 'bg-j-purple',
+};
+
+export function HudCard({
+  label, title, value, sub, subtitle, progress, children, onClick,
+  className = '', delay = 0, accent = 'cyan', headerExtra
 }: HudCardProps) {
+  const displayLabel = label || title;
+  const displaySub = sub || subtitle;
+  const hasValue = value !== undefined;
+
   return (
-    <div
-      className={`relative bg-[#041428]/60 border border-[#00cfff]/20 rounded-xl p-5 overflow-hidden backdrop-blur-md transition-all duration-300 hover:border-[#00cfff]/45 hover:shadow-[0_0_20px_rgba(0,207,255,0.15)] group ${className}`}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+      whileHover={{ y: -2 }}
+      onClick={onClick}
+      className={`
+        relative j-card j-corner
+        ${ACCENT_COLORS[accent]}
+        ${onClick ? 'cursor-pointer' : ''}
+        ${className}
+      `}
     >
-      {/* Corner L-shapes */}
-      <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#00cfff] opacity-60 group-hover:opacity-100 transition-opacity" />
-      <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#00cfff] opacity-60 group-hover:opacity-100 transition-opacity" />
-      <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#00cfff] opacity-60 group-hover:opacity-100 transition-opacity" />
-      <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#00cfff] opacity-60 group-hover:opacity-100 transition-opacity" />
+      {/* Top-right corner accent */}
+      <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-j-cyan/40 rounded-tr-lg pointer-events-none" />
 
-      {/* Grid Overlay background (very subtle) */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
-
-      {/* Header */}
-      {(title || subtitle || headerExtra) && (
-        <div className="flex items-center justify-between border-b border-[#00cfff]/10 pb-3 mb-4">
+      {/* RENDER HEADER LAYOUT (for cards with title/headerExtra or no value) */}
+      {!hasValue && (displayLabel || headerExtra) && (
+        <div className="flex items-center justify-between border-b border-j-cyan/10 pb-3 mb-4">
           <div>
-            {title && (
-              <h3 className="text-xs font-mono font-bold tracking-widest text-[#00cfff] uppercase">
-                {title}
+            {displayLabel && (
+              <h3 className="text-xs font-mono font-bold tracking-widest text-j-cyan uppercase">
+                {displayLabel}
               </h3>
             )}
-            {subtitle && (
-              <p className="text-[10px] font-mono text-[#8ab6d6]/60 uppercase tracking-wider mt-0.5">
-                {subtitle}
+            {displaySub && (
+              <p className="text-[10px] font-mono text-j-text-sub uppercase tracking-wider mt-0.5">
+                {displaySub}
               </p>
             )}
           </div>
@@ -50,26 +82,43 @@ export default function HudCard({
         </div>
       )}
 
-      {/* Content */}
-      <div className="relative z-10 text-[#e8f7ff]">{children}</div>
-
-      {/* Optional HUD metrics bar */}
-      {progress !== undefined && (
-        <div className="mt-4 pt-3 border-t border-[#00cfff]/5">
-          <div className="flex justify-between text-[10px] font-mono text-[#8ab6d6]/70 mb-1">
-            <span>SYSTEM_CAPACITY</span>
-            <span>{Math.round(progress)}%</span>
+      {/* RENDER VALUE LAYOUT (for stats style) */}
+      {hasValue && (
+        <>
+          {displayLabel && (
+            <div className="j-font-mono text-[9px] tracking-[0.2em] uppercase text-j-text-muted mb-2">
+              {displayLabel}
+            </div>
+          )}
+          
+          <div className={`text-2xl font-bold ${ACCENT_TEXT[accent]} j-text-glow leading-none mb-1`}>
+            {value}
           </div>
-          <div className="h-1 w-full bg-[#081d38] rounded-full overflow-hidden">
+
+          {displaySub && (
+            <div className="text-[10px] text-j-text-muted mt-1">{displaySub}</div>
+          )}
+        </>
+      )}
+
+      {/* Card Content */}
+      {children && <div className="relative z-10">{children}</div>}
+
+      {/* Progress Bar */}
+      {progress !== undefined && (
+        <div className="mt-3">
+          <div className="h-[2px] bg-j-cyan/8 rounded-full overflow-hidden">
             <motion.div
+              className={`h-full ${ACCENT_BAR[accent]} rounded-full`}
               initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="h-full bg-gradient-to-r from-[#00cfff]/40 to-[#00cfff]"
+              animate={{ width: `${Math.min(progress, 100)}%` }}
+              transition={{ delay: delay + 0.3, duration: 0.8, ease: 'easeOut' }}
             />
           </div>
         </div>
       )}
-    </div>
-  )
+    </motion.div>
+  );
 }
+
+export default HudCard;

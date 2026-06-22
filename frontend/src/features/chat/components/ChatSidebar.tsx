@@ -38,7 +38,7 @@ export default function ChatSidebar({ conversations, activeId, onSelect, onDelet
   }
 
   return (
-    <div className="w-64 flex-shrink-0 border-r border-[#00cfff]/15 flex flex-col bg-[#041428]/60 h-full backdrop-blur-md">
+    <div className="hidden md:flex w-64 flex-shrink-0 border-r border-[#00cfff]/15 flex-col bg-[#041428]/60 h-full backdrop-blur-md">
       {/* Header */}
       <div className="p-3 border-b border-[#00cfff]/10">
         <button

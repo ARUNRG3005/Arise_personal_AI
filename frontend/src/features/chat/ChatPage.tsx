@@ -274,7 +274,7 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex flex-col md:flex-row h-full overflow-hidden">
       {/* Chat sidebar */}
       <ChatSidebar
         conversations={conversations}

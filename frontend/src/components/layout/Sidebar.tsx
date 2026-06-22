@@ -45,7 +45,7 @@ const NAV_SECTIONS = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { sidebarCollapsed, toggleSidebar, setCommandPaletteOpen } = useUIStore()
   const { profile } = useUserStore()
   const location = useLocation()
@@ -161,6 +161,7 @@ export default function Sidebar() {
                       key={item.id}
                       to={item.path}
                       title={sidebarCollapsed ? item.label : undefined}
+                      onClick={onClose}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium',
                         'transition-all duration-200 cursor-pointer relative group',
@@ -233,6 +234,7 @@ export default function Sidebar() {
         <NavLink
           to="/settings"
           title={sidebarCollapsed ? 'Settings' : undefined}
+          onClick={onClose}
           className={({ isActive }) =>
             cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium',

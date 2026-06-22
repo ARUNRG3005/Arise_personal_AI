@@ -26,7 +26,7 @@ export default function ChatMessages({ messages, isTyping }: Props) {
   }, [messages])
 
   return (
-    <div className="flex-1 overflow-y-auto py-6 px-4 space-y-6 scrollbar-thin">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-4 scrollbar-thin">
       <AnimatePresence initial={false}>
         {messages.map((msg) => {
           const sources = Array.isArray(msg.metadata?.sources) ? (msg.metadata.sources as any[]) : null;
@@ -57,8 +57,8 @@ export default function ChatMessages({ messages, isTyping }: Props) {
 
               {/* Bubble */}
               <div className={cn(
-                'flex flex-col gap-1 max-w-[80%]',
-                msg.role === 'user' ? 'items-end' : 'items-start'
+                'flex flex-col gap-1',
+                msg.role === 'user' ? 'w-full md:max-w-[75%] md:ml-auto items-end' : 'w-full md:max-w-[85%] items-start'
               )}>
                 {/* Monospace prefix */}
                 <div className={cn(

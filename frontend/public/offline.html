@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARISE — Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000811;
+      color: #00d4ff;
+      font-family: 'Courier New', monospace;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .wrap { padding: 24px; max-width: 320px; }
+    .orb {
+      width: 80px; height: 80px;
+      border: 2px solid rgba(0,212,255,0.4);
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      display: flex; align-items: center; justify-content: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .orb-core {
+      width: 30px; height: 30px;
+      background: rgba(0,212,255,0.3);
+      border-radius: 50%;
+    }
+    h1 { font-size: 20px; letter-spacing: 0.3em; margin-bottom: 8px; }
+    p  { font-size: 12px; color: rgba(0,212,255,0.5); line-height: 1.7; margin-bottom: 24px; }
+    button {
+      background: rgba(0,212,255,0.1);
+      border: 1px solid rgba(0,212,255,0.4);
+      color: #00d4ff; padding: 12px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px; letter-spacing: 0.2em;
+      cursor: pointer; border-radius: 4px;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 10px rgba(0,212,255,0.2); }
+      50%      { box-shadow: 0 0 30px rgba(0,212,255,0.5); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="orb"><div class="orb-core"></div></div>
+    <h1>OFFLINE</h1>
+    <p>Network connection lost.<br/>ARISE is operating in offline mode.<br/>Cached data is still available.</p>
+    <button onclick="window.location.reload()">RECONNECT</button>
+  </div>
+</body>
+</html>

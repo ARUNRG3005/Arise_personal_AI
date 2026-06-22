@@ -95,6 +95,23 @@ export default {
           border: 'rgba(255, 255, 255, 0.1)',
           dark: 'rgba(0, 0, 0, 0.2)',
         },
+        // JARVIS colors
+        j: {
+          void:    '#000811',
+          bg:      '#010f1e',
+          surface: '#021628',
+          elevated:'#032038',
+          overlay: '#042a4a',
+          cyan:    '#00d4ff',
+          'cyan-bright': '#40e8ff',
+          'cyan-dim':    '#0099cc',
+          blue:    '#1a6fff',
+          text:    '#c8eeff',
+          green:   '#00ff9d',
+          amber:   '#ffb300',
+          red:     '#ff3355',
+          purple:  '#9d4edd',
+        },
       },
       backgroundImage: {
         'gradient-primary': 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
@@ -121,6 +138,10 @@ export default {
         'card': '0 4px 16px rgba(0, 0, 0, 0.2)',
         'card-hover': '0 8px 32px rgba(0, 0, 0, 0.3)',
         'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        'j-sm': '0 0 8px rgba(0,212,255,0.4)',
+        'j-md': '0 0 20px rgba(0,212,255,0.3), 0 0 40px rgba(0,212,255,0.1)',
+        'j-lg': '0 0 40px rgba(0,212,255,0.4), 0 0 80px rgba(0,212,255,0.15)',
+        'j-blue': '0 0 20px rgba(26,111,255,0.4)',
       },
       backdropBlur: {
         xs: '2px',
@@ -141,6 +162,16 @@ export default {
         'glow-pulse': 'glowPulse 2s ease-in-out infinite',
         'rotate-left': 'rotateLeft 12s linear infinite',
         'rotate-right': 'rotateRight 8s linear infinite',
+        'j-scan':       'j-scanline 5s linear infinite',
+        'j-pulse':      'j-pulse-glow 2s ease-in-out infinite',
+        'j-cw':         'j-rotate-cw 8s linear infinite',
+        'j-ccw':        'j-rotate-ccw 5s linear infinite',
+        'j-cw-fast':    'j-rotate-cw 3s linear infinite',
+        'j-blink':      'j-blink 1.5s ease-in-out infinite',
+        'j-fade-up':    'j-fade-up 0.4s ease both',
+        'j-ring-pulse': 'j-ring-pulse 2.5s ease-in-out infinite',
+        'j-wave':       'j-wave 0.6s ease-in-out infinite',
+        'j-flicker':    'j-flicker 10s infinite',
       },
       keyframes: {
         float: {
@@ -209,6 +240,9 @@ export default {
         '80': '20rem',
         '88': '22rem',
         '96': '24rem',
+      },
+      screens: {
+        'xs': '375px',   /* iPhone SE */
       },
     },
   },
